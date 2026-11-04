@@ -96,3 +96,6 @@
 .recent-flights>.panel-copy{margin-bottom:0;font-size:10px}
 @media(max-width:1000px){.flight-layout{grid-template-columns:1fr}.flight-side{grid-template-columns:1fr 1fr}.round-cards{grid-template-columns:repeat(3,1fr)}}
 @media(max-width:700px){.flight-top{display:block}.flight-top-controls{margin-top:15px}.flight-warning{align-items:flex-start;flex-direction:column;gap:5px}.flight-main{padding:15px;min-height:0}.flight-side{grid-template-columns:1fr}.round-cards{grid-template-columns:repeat(2,minmax(0,1fr))}.flight-state{flex-wrap:wrap}.state-chip{margin-left:0}.flight-orbit{margin:20px auto}.flight-top h1{font-size:34px}}
+
+.simulation-status{margin-top:12px;padding:11px 13px;border:1px solid #243b2a;background:#0d1710;border-radius:9px;color:#91b49a;font-size:10px;line-height:1.65}
+#run-flight-simulation:disabled{opacity:.65;cursor:wait;transform:none}
