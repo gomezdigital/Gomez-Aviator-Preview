@@ -322,6 +322,44 @@
 
   $("#analyze-next-flight")?.addEventListener("click", analyzeNextFlight);
 
+  // Fast browser-side sampling simulation. It does NOT predict a real next round.
+  $("#run-flight-simulation")?.addEventListener("click", () => {
+    const button = $("#run-flight-simulation");
+    const display = $("#center-multiplier");
+    const status = $("#simulation-status");
+    if (!display || !status || !rounds.length) {
+      if (status) status.textContent = "No sample values available. Load demo data or import a CSV.";
+      return;
+    }
+    button.disabled = true;
+    button.textContent = "Calculating…";
+    status.textContent = "Running a quick sample calculation…";
+    // Small delay so the UI visibly responds, while computation remains lightweight.
+    window.setTimeout(() => {
+      try {
+        const sampleCount = rounds.length;
+        const sorted = [...rounds].sort((a,b) => a-b);
+        // Bootstrap-style resampling: choose a random observation from the loaded sample.
+        const picked = sorted[Math.floor(Math.random() * sorted.length)];
+        const medianValue = median(sorted);
+        const belowOrEqual = sorted.filter(v => v <= picked).length / sampleCount * 100;
+        display.replaceChildren();
+        display.append(document.createTextNode(picked.toFixed(2)));
+        const x = document.createElement("span"); x.textContent = "x"; display.appendChild(x);
+        $("#center-label").textContent = datasetIsImported ? "SAMPLED FROM IMPORT · UNVERIFIED" : "SYNTHETIC DEMO SAMPLE";
+        status.textContent = "Simulation complete in milliseconds. Selected " + picked.toFixed(2) +
+          "× from " + sampleCount + " loaded sample values; sample median " + medianValue.toFixed(2) +
+          "×; selected value is at approximately the " + belowOrEqual.toFixed(1) +
+          "th percentile of this dataset. This is a resampled historical/demo value—not a prediction of the next real flight.";
+      } catch (error) {
+        status.textContent = "Simulation could not complete: " + (error.message || "unknown error");
+      } finally {
+        button.disabled = false;
+        button.innerHTML = 'Run quick simulation <span>✦</span>';
+      }
+    }, 120);
+  });
+
   $("#run-core-analysis")?.addEventListener("click", () => {
     const output = $("#core-analysis-result");
     if (!output) return;
