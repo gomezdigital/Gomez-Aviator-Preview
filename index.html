@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#070a09">
+  <meta name="description" content="Gomez Aviator Intelligence — statistical research, historical data analysis, and simulation.">
+  <title>Gomez Aviator Intelligence | Public Preview</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="v2-preview.css">
+  <script src="v2-preview.js" defer></script>
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar" id="sidebar">
+      <a class="brand" href="#overview" aria-label="Gomez Aviator Intelligence">
+        <span class="brand-mark">GA<span>i</span></span>
+        <span class="brand-text"><b>GOMEZ</b><small>AVIATOR INTELLIGENCE</small></span>
+      </a>
+      <div class="side-label">RESEARCH WORKSPACE</div>
+      <nav class="navigation" aria-label="Main navigation">
+        <button class="nav-item active" data-view="overview"><span>◫</span> Overview</button>
+        <button class="nav-item" data-view="data"><span>▤</span> Data Lab</button>
+        <button class="nav-item" data-view="models"><span>◈</span> AI Model Lab</button>
+        <button class="nav-item" data-view="performance"><span>↗</span> Performance</button>
+        <button class="nav-item" data-view="sources"><span>↔</span> Data Sources</button>
+      </nav>
+      <div class="sidebar-status"><i></i><div><b>Research mode</b><small>Simulation · No betting</small></div></div>
+      <div class="sidebar-bottom">GOMEZ DIGITAL <span>•</span> V2 PREVIEW</div>
+    </aside>
+
+    <main class="main">
+      <header class="topbar">
+        <button class="menu-button" id="menu-button" aria-label="Open navigation">☰</button>
+        <div class="crumb">Gomez Intelligence <span>/</span> <b id="crumb-current">Overview</b></div>
+        <div class="top-actions"><span class="system-pill"><i></i> SYSTEM READY</span><span class="user-badge">GA</span></div>
+      </header>
+
+      <section class="view active" id="view-overview">
+        <div class="hero">
+          <div>
+            <div class="eyebrow"><i></i> AI RESEARCH · STATISTICS · SIMULATION</div>
+            <h1>Intelligence <span>Beyond the Numbers.</span></h1>
+            <p>Explore historical outcomes, test models, and measure evidence. No system can know a random future crash point with certainty.</p>
+          </div>
+          <div class="hero-buttons">
+            <button class="btn btn-quiet" id="reset-data">Reset demo</button>
+            <button class="btn btn-green" id="go-data">Open Data Lab <span>↗</span></button>
+            <button class="btn btn-quiet" id="analyze-next-flight">Analyze next flight <span>✦</span></button>
+          </div>
+        </div>
+
+        <div class="notice"><span>i</span><p><b>Research disclaimer</b> — This preview uses synthetic demo data. It is not connected to Betway or any live betting provider and does not provide guaranteed predictions or betting instructions.</p></div>
+        <article class="panel next-flight-panel" id="next-flight-panel" aria-live="polite">
+          <div class="panel-title"><div><span class="overline">NEXT-FLIGHT RESEARCH</span><h2>Evidence before estimates.</h2></div><span class="tag tag-muted">NOT A GUARANTEED PREDICTION</span></div>
+          <p class="panel-copy">Run a fast analysis of the current dataset. The engine reports historical evidence and uncertainty; it cannot reliably know the next crash point.</p>
+          <div id="next-flight-result" class="message" role="status">Ready. Load your own verified history in Data Lab, then run the analysis.</div>
+        </article>
+
+        <div class="metrics">
+          <article class="metric"><div class="metric-head">ROUNDS IN SAMPLE <span>▤</span></div><strong id="metric-count">120</strong><small><i class="green-text">●</i> Synthetic dataset</small></article>
+          <article class="metric"><div class="metric-head">SAMPLE MEDIAN <span>⌁</span></div><strong id="metric-median">1.84<span>x</span></strong><small>Descriptive statistic only</small></article>
+          <article class="metric"><div class="metric-head">HIGH MULTIPLIERS <span>↗</span></div><strong id="metric-high">12.5<span>%</span></strong><small>Sample results ≥ 5x</small></article>
+          <article class="metric"><div class="metric-head">MODEL STATUS <span>◈</span></div><strong class="status-text">NOT TRAINED</strong><small>Awaiting real evaluation data</small></article>
+        </div>
+
+        <div class="content-grid">
+          <article class="panel chart-panel">
+            <div class="panel-title"><div><span class="overline">DATA OVERVIEW</span><h2>Sample multiplier distribution</h2></div><span class="tag">DEMO DATA</span></div>
+            <div class="chart-wrap"><div class="y-labels"><span>20x+</span><span>10x</span><span>5x</span><span>1x</span></div><div class="chart" id="distribution-chart" aria-label="Synthetic multiplier chart"></div></div>
+            <div class="chart-footer"><span><i class="legend-dot"></i> Demo observations</span><span>Illustrative · Not live</span></div>
+          </article>
+          <article class="panel insight-panel">
+            <div class="panel-title"><div><span class="overline">AI RESEARCH</span><h2>Research assistant</h2></div><span class="ai-badge">G-AI</span></div>
+            <div class="assistant-card"><div class="assistant-icon">✦</div><div><b>Research mode is ready</b><p>Load or import data to receive descriptive analysis. No next-round certainty is claimed.</p></div></div>
+            <div class="insight-list">
+              <div><span class="insight-number">01</span><p><b>Describe the dataset</b><small>Distribution, median, range, and sample size.</small></p></div>
+              <div><span class="insight-number">02</span><p><b>Test a hypothesis</b><small>Compare observed results against a baseline.</small></p></div>
+              <div><span class="insight-number">03</span><p><b>Evaluate a model</b><small>Use unseen data and track errors.</small></p></div>
+            </div>
+          </article>
+        </div>
+
+        <div class="bottom-grid">
+          <article class="panel">
+            <div class="panel-title"><div><span class="overline">SYSTEM HEALTH</span><h2>Infrastructure</h2></div><span class="tag tag-muted">PREVIEW</span></div>
+            <div class="health-row"><span>Frontend</span><b class="healthy">● Available</b></div>
+            <div class="health-row"><span>Backend collector</span><b class="pending">○ Not checked</b></div>
+            <div class="health-row"><span>Live provider feed</span><b class="pending">○ Not connected</b></div>
+            <div class="health-row"><span>AI model</span><b class="pending">○ Research only</b></div>
+          </article>
+          <article class="panel">
+            <div class="panel-title"><div><span class="overline">MODEL INTEGRITY</span><h2>Accuracy standards</h2></div><span class="tag tag-green">VALIDATION</span></div>
+            <p class="panel-copy">A high accuracy claim must be proven on unseen data. We will track baseline performance, calibration, false positives, and sample size before publishing any score.</p>
+            <div class="progress-label"><span>98% ambition</span><b>Research target — not verified</b></div>
+            <div class="progress-track"><span></span></div>
+          </article>
+        </div>
+      </section>
+
+      <section class="view" id="view-data">
+        <div class="section-heading"><span class="overline">WORKSPACE / DATA LAB</span><h1>Data <span>Laboratory.</span></h1><p>Explore and validate historical or synthetic observations.</p></div>
+        <article class="panel data-panel">
+          <div class="panel-title"><div><span class="overline">DATA INPUT</span><h2>Import a CSV dataset</h2></div><span class="tag">LOCAL PROCESSING</span></div>
+          <p class="panel-copy">CSV should contain a column named <code>multiplier</code>. This preview processes the file in your browser. Do not upload passwords, account details, or private credentials.</p>
+          <label class="file-drop" for="csv-input"><span>↑</span><b>Choose CSV file</b><small>CSV format · multiplier column · max 2 MB</small></label>
+          <input id="csv-input" type="file" accept=".csv,text/csv" hidden>
+          <div id="data-message" class="message" role="status">Demo dataset loaded. Choose a CSV to replace it.</div>
+          <div class="data-summary" id="data-summary"></div>
+          <button class="btn btn-quiet" id="download-sample">Download sample CSV</button>
+        </article>
+      </section>
+
+      <section class="view" id="view-models">
+        <div class="section-heading"><span class="overline">WORKSPACE / AI MODEL LAB</span><h1>Model <span>Research.</span></h1><p>Compare analytical methods without pretending that historical sequences reveal the next crash.</p></div>
+        <div class="model-grid">
+          <article class="panel model-card"><span class="model-icon">Σ</span><h2>Statistical baseline</h2><p>Establish simple reference performance before testing more complex models.</p><span class="tag">FOUNDATION</span></article>
+          <article class="panel model-card"><span class="model-icon">◈</span><h2>Bayesian research</h2><p>Study uncertainty and update estimates when valid new evidence arrives.</p><span class="tag">EXPERIMENTAL</span></article>
+          <article class="panel model-card"><span class="model-icon">⌁</span><h2>Machine learning</h2><p>Explore models only when data volume, quality, and evaluation design justify them.</p><span class="tag">NOT TRAINED</span></article>
+        </div>
+        <article class="panel"><span class="overline">RESEARCH RULE</span><h2>Never train and test on the same observations.</h2><p class="panel-copy">The model lab will use chronological holdout tests, baseline comparisons, and documented limitations to reduce data leakage and overfitting.</p></article>
+      </section>
+
+      <section class="view" id="view-performance">
+        <div class="section-heading"><span class="overline">WORKSPACE / PERFORMANCE</span><h1>Model <span>Performance.</span></h1><p>Only measured results belong here. No fabricated accuracy numbers.</p></div>
+        <article class="panel"><div class="panel-title"><div><span class="overline">VALIDATION STATUS</span><h2>Evaluation not available yet</h2></div><span class="tag tag-muted">NO TEST RUN</span></div><p class="panel-copy">We need a defined prediction task, valid labeled data, and unseen observations before calculating accuracy. A 98% result will only be displayed if rigorous testing supports it.</p><div class="health-row"><span>Independent test set</span><b class="pending">○ Not configured</b></div><div class="health-row"><span>Baseline comparison</span><b class="pending">○ Pending</b></div><div class="health-row"><span>Calibration check</span><b class="pending">○ Pending</b></div></article>
+      </section>
+
+      <section class="view" id="view-sources">
+        <div class="section-heading"><span class="overline">WORKSPACE / DATA SOURCES</span><h1>Source <span>Intelligence.</span></h1><p>Transparent source status and data provenance.</p></div>
+        <article class="panel source-card"><div class="panel-title"><div><span class="overline">SOURCE PRIORITY</span><h2>Betway Botswana</h2></div><span class="tag tag-muted">NOT CONNECTED</span></div><p class="panel-copy">Betway is a source we may investigate for lawful, authorized historical data access. No live feed is connected or verified.</p><div class="health-row"><span>Source verification</span><b class="pending">○ Pending</b></div><div class="health-row"><span>Collector API</span><b class="pending">○ Not configured</b></div><div class="health-row"><span>Last successful sync</span><b>—</b></div><div class="notice source-notice"><span>!</span><p>Use this project for research and simulation. It does not place bets or connect to betting accounts.</p></div></article>
+      </section>
+
+      <footer class="footer"><span>GOMEZ AVIATOR INTELLIGENCE</span><span>V2 PREVIEW · RESEARCH & SIMULATION ONLY</span></footer>
+    </main>
+  </div>
+</body>
+</html>
