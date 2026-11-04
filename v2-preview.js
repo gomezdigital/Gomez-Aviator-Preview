@@ -254,12 +254,12 @@
     }
   }
 
-  const validViews = new Set($(".view").map((view) => view.id.replace(/^view-/, "")));
+  const validViews = new Set($$(".view").map((view) => view.id.replace(/^view-/, "")));
 
   function showView(name, options = {}) {
     const target = validViews.has(name) ? name : "overview";
-    $(".view").forEach((view) => view.classList.toggle("active", view.id === "view-" + target));
-    $(".nav-item").forEach((button) => {
+    $$(".view").forEach((view) => view.classList.toggle("active", view.id === "view-" + target));
+    $$(".nav-item").forEach((button) => {
       const isActive = button.dataset.view === target;
       button.classList.toggle("active", isActive);
       if (isActive) button.setAttribute("aria-current", "page");
@@ -274,7 +274,7 @@
     window.scrollTo({ top: 0, behavior: options.smooth === false ? "auto" : "smooth" });
   }
 
-  $(".nav-item").forEach((button) => {
+  $$(".nav-item").forEach((button) => {
     button.addEventListener("click", () => showView(button.dataset.view));
   });
 
