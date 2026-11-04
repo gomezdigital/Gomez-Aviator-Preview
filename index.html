@@ -39,64 +39,38 @@
       </header>
 
       <section class="view active" id="view-overview">
-        <div class="hero">
-          <div>
-            <div class="eyebrow"><i></i> AI RESEARCH · STATISTICS · SIMULATION</div>
-            <h1>Intelligence <span>Beyond the Numbers.</span></h1>
-            <p>Explore historical outcomes, test models, and measure evidence. No system can know a random future crash point with certainty.</p>
-          </div>
-          <div class="hero-buttons">
-            <button class="btn btn-quiet" id="reset-data">Reset demo</button>
-            <button class="btn btn-green" id="go-data">Open Data Lab <span>↗</span></button>
-            <button class="btn btn-quiet" id="analyze-next-flight">Analyze next flight <span>✦</span></button>
-          </div>
+        <div class="flight-top">
+          <div><span class="overline">GOMEZ AVIATOR INTELLIGENCE</span><h1>Flight <span>Monitor.</span></h1><p>Clean Aviator-style interface for viewing recorded rounds and historical research.</p></div>
+          <div class="flight-top-controls"><label for="platform-select">PLATFORM</label><select id="platform-select"><option>Demo environment</option><option>Historical CSV</option></select><span class="demo-pill"><i></i> DEMO MODE</span></div>
         </div>
-
-        <div class="notice"><span>i</span><p><b>Research disclaimer</b> — This preview uses synthetic demo data. It is not connected to Betway or any live betting provider and does not provide guaranteed predictions or betting instructions.</p></div>
-        <article class="panel next-flight-panel" id="next-flight-panel" aria-live="polite">
-          <div class="panel-title"><div><span class="overline">NEXT-FLIGHT RESEARCH</span><h2>Evidence before estimates.</h2></div><span class="tag tag-muted">NOT A GUARANTEED PREDICTION</span></div>
-          <p class="panel-copy">Run a fast analysis of the current dataset. The engine reports historical evidence and uncertainty; it cannot reliably know the next crash point.</p>
-          <div id="next-flight-result" class="message" role="status">Ready. Load your own verified history in Data Lab, then run the analysis.</div>
+        <div class="flight-warning"><b>RESEARCH PREVIEW</b><span>Sample multipliers below are illustrative demo values—not live results or predictions.</span></div>
+        <div class="flight-layout">
+          <article class="flight-main panel">
+            <div class="flight-panel-head"><div><span class="overline">FLIGHT DISPLAY</span><h2>Multiplier monitor</h2></div><span class="tag tag-green">SIMULATION</span></div>
+            <div class="flight-orbit"><div class="orbit-ring"></div><div class="orbit-inner"><span class="orbit-label">SAMPLE ROUND</span><strong>1.07<span>x</span></strong><small>DEMO VALUE</small></div><div class="orbit-plane">✈</div></div>
+            <div class="flight-state"><span class="state-dot"></span><div><b>Sample flight displayed</b><small>No live game connection</small></div><span class="state-chip">HISTORICAL / DEMO</span></div>
+            <div class="flight-actions"><button class="btn btn-green" id="go-data">Import historical data <span>↗</span></button><button class="btn btn-quiet" id="reset-data">Refresh demo</button></div>
+          </article>
+          <aside class="flight-side">
+            <article class="panel next-flight-card"><span class="overline">NEXT FLIGHT</span><div class="next-value">—<span>x</span></div><b>Unknown outcome</b><p>Aviator rounds are random. This preview cannot reliably predict the next crash point.</p><div class="next-status"><i></i> Prediction unavailable</div></article>
+            <article class="panel mini-stats"><div class="panel-title"><div><span class="overline">DATA SNAPSHOT</span><h2>Demo statistics</h2></div></div><div class="mini-stat"><span>Sample size</span><b id="metric-count">120</b></div><div class="mini-stat"><span>Sample median</span><b id="metric-median">1.84x</b></div><div class="mini-stat"><span>Rounds ≥ 5x</span><b id="metric-high">12.5%</b></div></article>
+          </aside>
+        </div>
+        <article class="panel recent-flights">
+          <div class="panel-title"><div><span class="overline">ROUND HISTORY</span><h2>Recent sample flights</h2></div><span class="tag">SYNTHETIC DEMO</span></div>
+          <div class="round-cards" id="round-cards">
+            <div class="round-card"><small>ROUND SAMPLE 01</small><strong>1.07<span>x</span></strong><span class="round-dot"></span></div>
+            <div class="round-card"><small>ROUND SAMPLE 02</small><strong>1.00<span>x</span></strong><span class="round-dot"></span></div>
+            <div class="round-card"><small>ROUND SAMPLE 03</small><strong>1.89<span>x</span></strong><span class="round-dot"></span></div>
+            <div class="round-card"><small>ROUND SAMPLE 04</small><strong>2.14<span>x</span></strong><span class="round-dot"></span></div>
+            <div class="round-card"><small>ROUND SAMPLE 05</small><strong>3.42<span>x</span></strong><span class="round-dot"></span></div>
+            <div class="round-card"><small>ROUND SAMPLE 06</small><strong>1.26<span>x</span></strong><span class="round-dot"></span></div>
+          </div>
+          <p class="panel-copy">These values are examples to demonstrate the interface. Import a verified historical CSV in Data Lab to replace the demo sample.</p>
         </article>
-
-        <div class="metrics">
-          <article class="metric"><div class="metric-head">ROUNDS IN SAMPLE <span>▤</span></div><strong id="metric-count">120</strong><small><i class="green-text">●</i> Synthetic dataset</small></article>
-          <article class="metric"><div class="metric-head">SAMPLE MEDIAN <span>⌁</span></div><strong id="metric-median">1.84<span>x</span></strong><small>Descriptive statistic only</small></article>
-          <article class="metric"><div class="metric-head">HIGH MULTIPLIERS <span>↗</span></div><strong id="metric-high">12.5<span>%</span></strong><small>Sample results ≥ 5x</small></article>
-          <article class="metric"><div class="metric-head">MODEL STATUS <span>◈</span></div><strong class="status-text">NOT TRAINED</strong><small>Awaiting real evaluation data</small></article>
-        </div>
-
         <div class="content-grid">
-          <article class="panel chart-panel">
-            <div class="panel-title"><div><span class="overline">DATA OVERVIEW</span><h2>Sample multiplier distribution</h2></div><span class="tag">DEMO DATA</span></div>
-            <div class="chart-wrap"><div class="y-labels"><span>20x+</span><span>10x</span><span>5x</span><span>1x</span></div><div class="chart" id="distribution-chart" aria-label="Synthetic multiplier chart"></div></div>
-            <div class="chart-footer"><span><i class="legend-dot"></i> Demo observations</span><span>Illustrative · Not live</span></div>
-          </article>
-          <article class="panel insight-panel">
-            <div class="panel-title"><div><span class="overline">AI RESEARCH</span><h2>Research assistant</h2></div><span class="ai-badge">G-AI</span></div>
-            <div class="assistant-card"><div class="assistant-icon">✦</div><div><b>Research mode is ready</b><p>Load or import data to receive descriptive analysis. No next-round certainty is claimed.</p></div></div>
-            <div class="insight-list">
-              <div><span class="insight-number">01</span><p><b>Describe the dataset</b><small>Distribution, median, range, and sample size.</small></p></div>
-              <div><span class="insight-number">02</span><p><b>Test a hypothesis</b><small>Compare observed results against a baseline.</small></p></div>
-              <div><span class="insight-number">03</span><p><b>Evaluate a model</b><small>Use unseen data and track errors.</small></p></div>
-            </div>
-          </article>
-        </div>
-
-        <div class="bottom-grid">
-          <article class="panel">
-            <div class="panel-title"><div><span class="overline">SYSTEM HEALTH</span><h2>Infrastructure</h2></div><span class="tag tag-muted">PREVIEW</span></div>
-            <div class="health-row"><span>Frontend</span><b class="healthy">● Available</b></div>
-            <div class="health-row"><span>Backend collector</span><b class="pending">○ Not checked</b></div>
-            <div class="health-row"><span>Live provider feed</span><b class="pending">○ Not connected</b></div>
-            <div class="health-row"><span>AI model</span><b class="pending">○ Research only</b></div>
-          </article>
-          <article class="panel">
-            <div class="panel-title"><div><span class="overline">MODEL INTEGRITY</span><h2>Accuracy standards</h2></div><span class="tag tag-green">VALIDATION</span></div>
-            <p class="panel-copy">A high accuracy claim must be proven on unseen data. We will track baseline performance, calibration, false positives, and sample size before publishing any score.</p>
-            <div class="progress-label"><span>98% ambition</span><b>Research target — not verified</b></div>
-            <div class="progress-track"><span></span></div>
-          </article>
+          <article class="panel chart-panel"><div class="panel-title"><div><span class="overline">DATA OVERVIEW</span><h2>Sample multiplier distribution</h2></div><span class="tag">DEMO DATA</span></div><div class="chart-wrap"><div class="y-labels"><span>20x+</span><span>10x</span><span>5x</span><span>1x</span></div><div class="chart" id="distribution-chart" aria-label="Synthetic multiplier chart"></div></div><div class="chart-footer"><span><i class="legend-dot"></i> Demo observations</span><span>Illustrative · Not live</span></div></article>
+          <article class="panel insight-panel"><div class="panel-title"><div><span class="overline">RESEARCH ASSISTANT</span><h2>Explore the data</h2></div><span class="ai-badge">G-AI</span></div><div class="assistant-card"><div class="assistant-icon">✦</div><div><b>Historical analysis only</b><p>Review descriptive statistics, test hypotheses, and compare datasets without claiming to know future outcomes.</p></div></div><div class="insight-list"><div><span class="insight-number">01</span><p><b>Import history</b><small>Upload a CSV in Data Lab.</small></p></div><div><span class="insight-number">02</span><p><b>Review evidence</b><small>Inspect sample sizes and data quality.</small></p></div><div><span class="insight-number">03</span><p><b>Test responsibly</b><small>Evaluate models against unseen observations.</small></p></div></div></article>
         </div>
       </section>
 
