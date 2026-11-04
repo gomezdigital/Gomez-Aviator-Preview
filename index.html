@@ -47,9 +47,9 @@
         <div class="flight-layout">
           <article class="flight-main panel">
             <div class="flight-panel-head"><div><span class="overline">FLIGHT DISPLAY</span><h2>Multiplier monitor</h2></div><span class="tag tag-green">SIMULATION</span></div>
-            <div class="flight-orbit"><div class="orbit-ring"></div><div class="orbit-inner"><span class="orbit-label">SAMPLE ROUND</span><strong>1.07<span>x</span></strong><small>DEMO VALUE</small></div><div class="orbit-plane">✈</div></div>
+            <div class="flight-orbit"><div class="orbit-ring"></div><div class="orbit-inner"><span class="orbit-label">SIMULATED RESULT</span><strong id="center-multiplier">1.07<span>x</span></strong><small id="center-label">DEMO SAMPLE · NOT LIVE</small></div><div class="orbit-plane">✈</div></div>
             <div class="flight-state"><span class="state-dot"></span><div><b>Sample flight displayed</b><small>No live game connection</small></div><span class="state-chip">HISTORICAL / DEMO</span></div>
-            <div class="flight-actions"><button class="btn btn-green" id="go-data">Import historical data <span>↗</span></button><button class="btn btn-quiet" id="reset-data">Refresh demo</button></div>
+            <div class="flight-actions"><button class="btn btn-green" id="run-flight-simulation">Run quick simulation <span>✦</span></button><button class="btn btn-quiet" id="go-data">Import historical data</button><button class="btn btn-quiet" id="reset-data">Refresh demo</button></div><div id="simulation-status" class="simulation-status" role="status">Ready · Press “Run quick simulation” to generate an illustrative sample.</div>
           </article>
           <aside class="flight-side">
             <article class="panel next-flight-card"><span class="overline">NEXT FLIGHT</span><div class="next-value">—<span>x</span></div><b>Unknown outcome</b><p>Aviator rounds are random. This preview cannot reliably predict the next crash point.</p><div class="next-status"><i></i> Prediction unavailable</div></article>
