@@ -13,12 +13,24 @@
   let snapshots = loadSnapshots();
   let latestComparison = null;
 
-  let rounds = Array.from({ length: 120 }, () => {
-    const r = Math.random();
-    if (r < 0.72) return Number((1 + Math.random() * 1.1).toFixed(2));
-    if (r < 0.93) return Number((2.1 + Math.random() * 3.8).toFixed(2));
-    return Number((6 + Math.random() * 18).toFixed(2));
-  });
+  // One simulated day (1,440 rounds at one-minute intervals). Synthetic only.
+  function generateSyntheticDay() {
+    const dayStart = Date.now() - 24 * 60 * 60 * 1000;
+    const values = Array.from({ length: 1440 }, () => {
+      const r = Math.random();
+      if (r < 0.68) return Number((1 + Math.random() * 1.15).toFixed(2));
+      if (r < 0.91) return Number((2.15 + Math.random() * 3.85).toFixed(2));
+      if (r < 0.985) return Number((6 + Math.random() * 14).toFixed(2));
+      return Number((20 + Math.random() * 80).toFixed(2));
+    });
+    window.GomezObservations = values.map((multiplier, index) => ({
+      multiplier,
+      timestamp: new Date(dayStart + index * 60 * 1000).toISOString(),
+      roundId: "synthetic-day-" + (index + 1)
+    }));
+    return values;
+  }
+  let rounds = generateSyntheticDay();
 
   // CSV parser supporting quoted cells, commas inside quotes, and escaped quotes.
   // It deliberately rejects unterminated quoted fields rather than silently misreading data.
@@ -397,12 +409,7 @@
 
 
   $("#reset-data").addEventListener("click", () => {
-    rounds = Array.from({ length: 120 }, () => {
-      const r = Math.random();
-      if (r < 0.72) return Number((1 + Math.random() * 1.1).toFixed(2));
-      if (r < 0.93) return Number((2.1 + Math.random() * 3.8).toFixed(2));
-      return Number((6 + Math.random() * 18).toFixed(2));
-    });
+    rounds = generateSyntheticDay();
     window.GomezObservations = null;
     skippedRows = 0;
     datasetIsImported = false;
