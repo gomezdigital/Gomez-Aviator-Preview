@@ -1,0 +1,37 @@
+name: Validate Gomez Aviator Preview
+
+on:
+  push:
+    branches: ["main", "sync/original-intelligence"]
+  pull_request:
+    branches: ["main"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  syntax-and-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: "22"
+          package-manager-cache: false
+      - name: Check preview frontend syntax
+        run: node --check v2-preview.js
+      - name: Check original research engine syntax
+        run: node --check script.js
+      - name: Check collector syntax
+        run: node --check collector/server.js
+      - name: Validate collector package metadata
+        run: node -e "JSON.parse(require('node:fs').readFileSync('collector/package.json', 'utf8'))"
+      - name: Run collector syntax checks
+        working-directory: collector
+        run: npm run check
+      - name: Run collector tests
+        working-directory: collector
+        run: npm test
