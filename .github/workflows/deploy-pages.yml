@@ -2,7 +2,7 @@ name: Deploy Gomez Aviator Preview to GitHub Pages
 
 on:
   push:
-    branches: ["main"]
+    branches: ["main", "sync/original-intelligence"]
   workflow_dispatch:
 
 permissions:
@@ -22,15 +22,19 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
       - name: Configure GitHub Pages
         uses: actions/configure-pages@v5
         with:
           enablement: true
+      - name: Stage frontend-only site
+        run: |
+          mkdir -p _site
+          cp index.html v2-preview.css v2-preview.js _site/
       - name: Upload static site
-        uses: actions/upload-pages-artifact@v3
+        uses: actions/upload-pages-artifact@v5
         with:
-          path: "."
+          path: "_site"
       - name: Deploy to GitHub Pages
         id: deployment
-        uses: actions/deploy-pages@v4
+        uses: actions/deploy-pages@v5
