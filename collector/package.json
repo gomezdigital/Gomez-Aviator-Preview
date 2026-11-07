@@ -1,0 +1,17 @@
+{
+  "name": "gomez-aviator-intelligence-collector",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Secure, source-neutral ingestion API for authorized crash-game round data.",
+  "type": "module",
+  "scripts": {
+    "start": "node server.js",
+    "check": "node --check server.js && node --check adapters/normalize.js && node --check adapters/index.js && node --check providers/gamedata365.js && node --check scripts/gamedata365-sync.js && node --check scripts/gamedata365-probe.js && node --check analytics/engine.js && node --check analytics/intelligence.js && node --check analytics/quality.js && node --check analytics/agents.js",
+    "test": "node --test server.test.js adapters/normalize.test.js providers/gamedata365.test.js analytics/engine.test.js analytics/intelligence.test.js analytics/quality.test.js analytics/agents.test.js",
+    "sync:gamedata365": "node scripts/gamedata365-sync.js",
+    "probe:gamedata365": "node scripts/gamedata365-probe.js"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
