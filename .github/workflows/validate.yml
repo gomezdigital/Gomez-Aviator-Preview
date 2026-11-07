@@ -21,7 +21,9 @@ jobs:
         with:
           node-version: "22"
           package-manager-cache: false
-      - name: Check frontend research engine syntax
+      - name: Check preview frontend syntax
+        run: node --check v2-preview.js
+      - name: Check original research engine syntax
         run: node --check script.js
       - name: Check collector syntax
         run: node --check collector/server.js
