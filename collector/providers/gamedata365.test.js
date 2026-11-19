@@ -31,16 +31,16 @@ test("GameData365 history adapter fetches Aviator rounds and preserves gap metad
   const mockFetch = async (url, options) => {
     requestedUrl = url; requestedHeaders = options.headers;
     return new Response(JSON.stringify({ status: "ok", game_id: "aviator", count: 2, history_spins: 50, next_cursor: "next-page", rounds: [
-      { round_id: "aviator-1", multiplier: 1.27, timestamp: "2026-11-19 13:04:08", backfilled: false },
-      { type: "gap", from: "2026-11-19T13:03:00Z", to: "2026-11-19T13:03:20Z", estimated_missing: 2, recovered: false },
-      { round_id: "aviator-2", multiplier: 4.86, timestamp: "2026-11-19T13:04:07Z", backfilled: true }
+      { round_id: "aviator-1", multiplier: 1.27, timestamp: "2026-11-05 09:04:08", backfilled: false },
+      { type: "gap", from: "2026-11-05T09:03:00Z", to: "2026-11-05T09:03:20Z", estimated_missing: 2, recovered: false },
+      { round_id: "aviator-2", multiplier: 4.86, timestamp: "2026-11-05T09:04:07Z", backfilled: true }
     ] }), { status: 200, headers: { "content-type": "application/json" } });
   };
   const result = await fetchGameData365History({ apiKey: "test-secret", limit: 200, cursor: "previous", fetchImpl: mockFetch });
   assert.match(requestedUrl, /\/v1\/crash\/history\?game=aviator&limit=200&cursor=previous/);
   assert.equal(requestedHeaders["X-API-Key"], "test-secret");
   assert.equal(result.rounds.length, 2);
-  assert.equal(result.rounds[0].endedAt, "2026-11-19T13:04:08.000Z");
+  assert.equal(result.rounds[0].endedAt, "2026-11-05T09:04:08.000Z");
   assert.equal(result.rounds[1].backfilled, true);
   assert.equal(result.skipped[0].reason, "PROVIDER_HISTORY_GAP");
   assert.equal(result.nextCursor, "next-page"); assert.equal(result.historySpins, 50);
