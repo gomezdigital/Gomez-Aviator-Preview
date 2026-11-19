@@ -21,6 +21,10 @@ jobs:
         with:
           node-version: "22"
           package-manager-cache: false
+      - name: Check research core syntax
+        run: node --check research-core.js
+      - name: Test browser research core
+        run: node --test research-core.test.js
       - name: Check preview frontend syntax
         run: node --check v2-preview.js
       - name: Check original research engine syntax
