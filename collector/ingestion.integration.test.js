@@ -1,26 +1,22 @@
 import test, { before, after } from "node:test";
 import assert from "node:assert/strict";
 import { spawn } from "node:child_process";
+import fs from "node:fs/promises";
 import http from "node:http";
-import { fileURLToPath } from "node:url";
+import os from "node:os";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 let collector;
-let supabase;
 let collectorUrl;
-let supabaseUrl;
-let rows = new Map();
+let tempDir;
 
 function listen(server) {
   return new Promise((resolve, reject) => {
     server.once("error", reject);
     server.listen(0, "127.0.0.1", () => resolve(server.address().port));
   });
-}
-
-function close(server) {
-  return new Promise((resolve) => server.close(resolve));
 }
 
 async function waitForHealth() {
@@ -36,47 +32,17 @@ async function waitForHealth() {
 }
 
 before(async () => {
-  rows = new Map();
-  supabase = http.createServer(async (req, res) => {
-    const url = new URL(req.url, "http://localhost");
-    res.setHeader("content-type", "application/json");
-    if (req.method === "GET" && url.pathname === "/rest/v1/aviator_rounds") {
-      res.end(JSON.stringify([...rows.values()]));
-      return;
-    }
-    if (req.method === "POST" && url.pathname === "/rest/v1/aviator_rounds") {
-      let body = "";
-      for await (const chunk of req) body += chunk;
-      const incoming = JSON.parse(body);
-      const accepted = [];
-      for (const record of incoming) {
-        const key = [record.source, record.game, record.round_id].join("::");
-        if (!rows.has(key)) {
-          rows.set(key, record);
-          accepted.push(record);
-        }
-      }
-      res.statusCode = 201;
-      res.end(JSON.stringify(accepted));
-      return;
-    }
-    res.statusCode = 404;
-    res.end(JSON.stringify({ message: "not found" }));
-  });
-  const supabasePort = await listen(supabase);
-  supabaseUrl = "http://127.0.0.1:" + supabasePort;
-
+  tempDir = await fs.mkdtemp(path.join(os.tmpdir(), "gomez-ingestion-integration-"));
   const probe = http.createServer();
-  const collectorPort = await listen(probe);
-  await close(probe);
-  collectorUrl = "http://127.0.0.1:" + collectorPort;
+  const port = await listen(probe);
+  await new Promise((resolve) => probe.close(resolve));
+  collectorUrl = "http://127.0.0.1:" + port;
 
   collector = spawn(process.execPath, [path.join(here, "server.js")], {
     env: {
       ...process.env,
-      PORT: String(collectorPort),
-      SUPABASE_URL: supabaseUrl,
-      SUPABASE_SERVICE_ROLE_KEY: "integration-test-only",
+      PORT: String(port),
+      DATA_FILE: path.join(tempDir, "rounds.jsonl"),
       INGEST_API_TOKEN: "integration-test-token",
       ALLOWED_SOURCES: "user-import",
       CORS_ORIGINS: ""
@@ -84,32 +50,31 @@ before(async () => {
     stdio: "ignore"
   });
   const health = await waitForHealth();
-  assert.equal(health.storageMode, "supabase");
-  assert.equal(health.persistentStorage, true);
+  assert.equal(health.storageMode, "local-file");
+  assert.equal(health.persistentStorage, false);
 });
 
 after(async () => {
   if (collector && collector.exitCode === null) collector.kill("SIGTERM");
-  if (supabase) await close(supabase);
+  if (tempDir) await fs.rm(tempDir, { recursive: true, force: true });
 });
 
-test("authenticated sample ingestion persists to Supabase and reads back", async () => {
-  const sample = {
-    source: "user-import",
-    rounds: [{
-      game: "aviator",
-      roundId: "synthetic-integration-round-001",
-      multiplier: 2.35,
-      endedAt: "2026-11-19T10:30:00.000Z"
-    }]
-  };
+test("authenticated sample ingestion persists and reads back through the API", async () => {
   const response = await fetch(collectorUrl + "/api/v1/ingest", {
     method: "POST",
     headers: {
       "content-type": "application/json",
       authorization: "Bearer integration-test-token"
     },
-    body: JSON.stringify(sample)
+    body: JSON.stringify({
+      source: "user-import",
+      rounds: [{
+        game: "aviator",
+        roundId: "synthetic-integration-round-001",
+        multiplier: 2.35,
+        endedAt: "2026-11-19T10:30:00.000Z"
+      }]
+    })
   });
   const result = await response.json();
   assert.equal(response.status, 201);
@@ -146,7 +111,8 @@ test("repeated sample ingestion is idempotent", async () => {
   assert.equal(response.status, 201);
   assert.equal(result.accepted, 0);
   assert.equal(result.duplicates, 1);
-  assert.equal(rows.size, 1);
+  const readback = await fetch(collectorUrl + "/api/v1/rounds?game=aviator&source=user-import");
+  assert.equal((await readback.json()).count, 1);
 });
 
 test("invalid sample records are rejected before storage", async () => {
@@ -162,5 +128,6 @@ test("invalid sample records are rejected before storage", async () => {
     })
   });
   assert.equal(response.status, 400);
-  assert.equal(rows.size, 1);
+  const readback = await fetch(collectorUrl + "/api/v1/rounds?game=aviator&source=user-import");
+  assert.equal((await readback.json()).count, 1);
 });
