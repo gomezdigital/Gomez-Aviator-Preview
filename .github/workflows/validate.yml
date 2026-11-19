@@ -21,12 +21,18 @@ jobs:
         with:
           node-version: "22"
           package-manager-cache: false
+      - name: Check research core syntax
+        run: node --check research-core.js
+      - name: Test browser research core
+        run: node --test research-core.test.js
+      - name: Test preview Data Lab interface
+        run: node --test preview-ui.test.js
       - name: Check preview frontend syntax
         run: node --check v2-preview.js
       - name: Check original research engine syntax
         run: node --check script.js
       - name: Check collector syntax
-        run: node --check collector/server.js
+        run: node --check collector/server.js && node --check collector/storage.js && node --check collector/storage.test.js
       - name: Validate collector package metadata
         run: node -e "JSON.parse(require('node:fs').readFileSync('collector/package.json', 'utf8'))"
       - name: Run collector syntax checks

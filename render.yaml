@@ -1,0 +1,23 @@
+services:
+  - type: web
+    name: gomez-aviator-collector
+    runtime: node
+    plan: free
+    rootDir: collector
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /health
+    autoDeploy: false
+    envVars:
+      - key: NODE_VERSION
+        value: 22
+      - key: INGEST_API_TOKEN
+        generateValue: true
+      - key: ALLOWED_SOURCES
+        value: ""
+      - key: CORS_ORIGINS
+        value: https://gomezdigital.github.io
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false

@@ -45,7 +45,7 @@ before(async () => {
       PORT: String(port),
       DATA_FILE: path.join(tempDir, "rounds.jsonl"),
       INGEST_API_TOKEN: "test-only-secret",
-      ALLOWED_SOURCES: "",
+      ALLOWED_SOURCES: "gamedata365",
       CORS_ORIGINS: "https://gomezdigital.github.io"
     },
     stdio: "ignore"
@@ -64,6 +64,9 @@ test("health endpoint reports service health but not a live feed", async () => {
   assert.equal(response.status, 200);
   assert.equal(body.ok, true);
   assert.equal(body.liveProviderConnected, false);
+  assert.equal(body.storageMode, "local-file");
+  assert.equal(body.persistentStorage, false);
+  assert.equal(body.storage.ok, true);
 });
 
 test("source endpoint marks sources as not verified", async () => {
@@ -140,7 +143,7 @@ test("ingestion rejects requests without a bearer token", async () => {
   assert.equal(response.status, 401);
 });
 
-test("ingestion remains disabled when no source is authorized", async () => {
+test("ingestion rejects sources that are not explicitly allowlisted", async () => {
   const response = await fetch(baseUrl + "/api/v1/ingest", {
     method: "POST",
     headers: {
@@ -149,10 +152,27 @@ test("ingestion remains disabled when no source is authorized", async () => {
     },
     body: JSON.stringify({
       source: "betway",
-      rounds: [{ roundId: "fake-test-round", multiplier: 1.65, endedAt: new Date().toISOString() }]
+      rounds: [{ roundId: "blocked-test-round", multiplier: 1.65, endedAt: new Date().toISOString() }]
     })
   });
   assert.equal(response.status, 403);
   const body = await response.json();
   assert.match(body.error, /source is not enabled/i);
+});
+
+test("ingestion accepts authorized records and identifies repeated round IDs", async () => {
+  const record = { roundId: "unique-test-round", game: "aviator", multiplier: 1.65, endedAt: new Date().toISOString() };
+  const send = () => fetch(baseUrl + "/api/v1/ingest", {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+      authorization: "Bearer test-only-secret"
+    },
+    body: JSON.stringify({ source: "gamedata365", rounds: [record] })
+  });
+  const [first, second] = await Promise.all([send(), send()]);
+  const bodies = await Promise.all([first.json(), second.json()]);
+  assert.ok([first.status, second.status].every(status => status === 201));
+  assert.equal(bodies.reduce((sum, body) => sum + body.accepted, 0), 1);
+  assert.equal(bodies.reduce((sum, body) => sum + body.duplicates, 0), 1);
 });

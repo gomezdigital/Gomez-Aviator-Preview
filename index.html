@@ -10,6 +10,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="v2-preview.css">
+  <script src="research-core.js" defer></script>
   <script src="v2-preview.js" defer></script>
 </head>
 <body>
@@ -78,12 +79,61 @@
         <div class="section-heading"><span class="overline">WORKSPACE / DATA LAB</span><h1>Data <span>Laboratory.</span></h1><p>Explore and validate historical or synthetic observations.</p></div>
         <article class="panel data-panel">
           <div class="panel-title"><div><span class="overline">DATA INPUT</span><h2>Import a CSV dataset</h2></div><span class="tag">LOCAL PROCESSING</span></div>
-          <p class="panel-copy">CSV should contain a column named <code>multiplier</code>. This preview processes the file in your browser. Do not upload passwords, account details, or private credentials.</p>
+          <p class="panel-copy">CSV should contain a column named <code>multiplier</code>. Optional columns: timestamp and round_id. Files are processed in this browser. Do not upload passwords, account details, or private credentials.</p>
           <label class="file-drop" for="csv-input"><span>↑</span><b>Choose CSV file</b><small>CSV format · multiplier column · max 2 MB</small></label>
           <input id="csv-input" type="file" accept=".csv,text/csv" hidden>
           <div id="data-message" class="message" role="status">Demo dataset loaded. Choose a CSV to replace it.</div>
           <div class="data-summary" id="data-summary"></div>
           <button class="btn btn-quiet" id="download-sample">Download sample CSV</button>
+          
+        </article>
+        <article class="panel">
+          <div class="panel-title"><div><span class="overline">DATA QUALITY</span><h2>Dataset audit</h2></div><span class="tag" id="quality-status">SYNTHETIC DEMO</span></div>
+          <div class="health-row"><span>Heuristic quality score</span><b id="quality-score">—</b></div><div class="data-summary" id="quality-grid"></div>
+          <p class="panel-copy" id="quality-warning">A quality score cannot authenticate a source or prove completeness.</p>
+        </article>
+        <article class="panel distribution-panel">
+          <div class="panel-title"><div><span class="overline">DISTRIBUTION</span><h2>Observed multiplier ranges</h2></div><span class="tag" id="distribution-source">DEMO DATA</span></div>
+          <div id="distribution-breakdown"></div><p class="panel-copy" id="distribution-warning">Observed sample frequencies only; not future probabilities.</p>
+        </article>
+        <article class="panel compare-panel">
+          <div class="panel-title"><div><span class="overline">WALK-FORWARD RESEARCH</span><h2>Baseline comparison</h2></div><span class="tag">HISTORICAL TEST</span></div>
+          <p class="panel-copy">Compare a simple historical baseline with a streak-conditioned estimate on later rows. This is retrospective evaluation, not next-flight prediction.</p>
+          <label for="core-threshold">Target threshold (x)</label><input id="core-threshold" type="number" min="1.01" step="0.01" value="2">
+          <label for="core-streak">Prior below-target streak length</label><input id="core-streak" type="number" min="1" max="100" step="1" value="3">
+          <button class="btn btn-green" id="run-core-analysis" type="button">Run walk-forward comparison</button>
+          <div class="message" id="core-analysis-result" role="status">Import historical data to run this evaluation.</div>
+        </article>
+        <article class="panel">
+          <div class="panel-title"><div><span class="overline">DATASET MANAGEMENT</span><h2>Saved summary snapshots</h2></div><span class="tag">LOCAL ONLY</span></div>
+          <p class="panel-copy">Only aggregate summaries are saved in this browser. Raw round-level observations are not stored by this feature.</p>
+          <label for="snapshot-label">Snapshot label</label><input id="snapshot-label" type="text" maxlength="80" placeholder="e.g. November sample">
+          <button class="btn btn-quiet" id="save-snapshot" type="button" disabled>Import a CSV to save</button>
+          <div class="health-row"><span>Saved summaries</span><b id="history-count">0 SAVED</b></div><div id="import-history"></div>
+          <label for="compare-first">Dataset A</label><select id="compare-first"></select><label for="compare-second">Dataset B</label><select id="compare-second"></select>
+          <button class="btn btn-quiet" id="run-dataset-compare" type="button">Compare snapshots</button>
+          <button class="btn btn-quiet" id="export-dataset-compare" type="button">Export comparison JSON</button>
+          <div class="message" id="dataset-comparison-result" role="status">Save at least two summaries to compare them.</div>
+        </article>
+        <article class="panel time-period-panel">
+          <div class="panel-title"><div><span class="overline">TIME-PERIOD ANALYSIS</span><h2>Historical grouping</h2></div><span class="tag" id="time-period-source">NOT RUN</span></div>
+          <label for="time-period-select">Group observations by</label><select id="time-period-select"><option value="day">UTC day</option><option value="week">UTC week</option><option value="month" selected>UTC month</option></select>
+          <button class="btn btn-quiet" id="run-time-period" type="button">Analyze time periods</button>
+          <div class="message" id="time-period-result" role="status">Import records with timestamps to enable grouping.</div><div id="time-period-table-wrap"></div><p class="panel-copy" id="time-period-warning"></p>
+        </article>
+        <article class="panel stability-panel">
+          <div class="panel-title"><div><span class="overline">ROLLING STABILITY</span><h2>Window analysis</h2></div><span class="tag" id="stability-source">NOT RUN</span></div>
+          <label for="stability-window">Window size</label><input id="stability-window" type="number" min="2" max="10000" value="100">
+          <label for="stability-step">Step size</label><input id="stability-step" type="number" min="1" max="10000" value="50">
+          <button class="btn btn-quiet" id="run-stability" type="button">Analyze rolling windows</button>
+          <div class="message" id="stability-result" role="status">Import historical observations to analyze rolling windows.</div><div id="stability-table-wrap"></div><p class="panel-copy" id="stability-warning"></p>
+        </article>
+        <article class="panel">
+          <div class="panel-title"><div><span class="overline">RESEARCH EXPORTS</span><h2>Export your report</h2></div><span class="tag">LOCAL GENERATION</span></div>
+          <p class="panel-copy">Reports contain descriptive statistics and limitations. The imported source remains unverified.</p>
+          <button class="btn btn-quiet" id="export-research-json" type="button">Export research JSON</button><button class="btn btn-quiet" id="export-research-html" type="button">Export readable HTML report</button>
+          <button class="btn btn-quiet" id="export-history" type="button">Export import metadata</button><button class="btn btn-quiet" id="clear-history" type="button">Clear local import history</button>
+          <div class="message" id="research-report-result" role="status">Import a CSV to generate a report.</div>
         </article>
       </section>
 
