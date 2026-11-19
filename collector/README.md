@@ -49,6 +49,19 @@ Example ingest body:
 
 The collector records observations supplied by an authorized source; it does not independently authenticate provider payloads or establish that a feed is live. Do not scrape betting sites or bypass access controls. Do not use these statistics as guaranteed future predictions or betting instructions.
 
+
+## GameData365 Aviator integration
+
+The provider adapter uses the documented HTTPS API at `https://api.gamedata365.com`:
+
+- `GET /v1/crash/live` — latest completed round per crash game; used by the probe.
+- `GET /v1/crash/history?game=aviator&limit=500` — newest Aviator history page; the sync script imports valid rounds and reports provider gap markers.
+- Authentication is sent only in the `X-API-Key` request header using the backend-only `GAMEDATA365_API_KEY` environment variable.
+
+Set `GAMEDATA365_API_KEY` only in Render's Environment settings. Never put it in the repository, frontend, chat, screenshots, or logs. The sync command also needs `COLLECTOR_URL`, `INGEST_API_TOKEN`, and `ALLOWED_SOURCES=gamedata365`. Run `npm run probe:gamedata365` to verify the live endpoint without storing records; run `npm run sync:gamedata365` to import the newest available history page. Both commands make provider API requests and consume plan quota.
+
+The free provider key is documented as 200 requests/month with only the newest 50 rounds. This is suitable for a connectivity check and small test import, not reliable continuous capture. A 5-minute polling schedule would use about 8,640 requests/month before retries, so do not enable that schedule on the free plan. Render free web services can sleep; a sleeping service does not provide continuous background polling. Use an explicitly selected provider plan and an always-running/scheduled execution option before promising continuous collection. Provider history gap markers are surfaced in sync output; the collector does not invent missing rounds.
+
 ## Render deployment
 
 A starter Blueprint is in `render.yaml` at the repository root. Review the service and environment settings before creating it. Set `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` in Render's secret environment settings. Leave `ALLOWED_SOURCES` empty until the provider is ready and authorized. Render free web services may sleep and are not suitable for guaranteed continuous collection; confirm current plan limits before relying on scheduled ingestion.
