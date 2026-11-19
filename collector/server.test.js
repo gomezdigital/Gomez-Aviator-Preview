@@ -64,6 +64,9 @@ test("health endpoint reports service health but not a live feed", async () => {
   assert.equal(response.status, 200);
   assert.equal(body.ok, true);
   assert.equal(body.liveProviderConnected, false);
+  assert.equal(body.storageMode, "local-file");
+  assert.equal(body.persistentStorage, false);
+  assert.equal(body.storage.ok, true);
 });
 
 test("source endpoint marks sources as not verified", async () => {
