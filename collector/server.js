@@ -142,13 +142,38 @@ async function readAllRecords() {
   }
 }
 
-async function appendRecords(records) {
-  writeQueue = writeQueue.then(async () => {
-    await fs.promises.mkdir(path.dirname(DATA_FILE), { recursive: true });
-    const lines = records.map((r) => JSON.stringify(r)).join("\n") + "\n";
-    await fs.promises.appendFile(DATA_FILE, lines, { encoding: "utf8", mode: 0o600 });
+async function persistUniqueRecords(source, records) {
+  let result;
+  // Serialize the read/deduplicate/write transaction so simultaneous requests
+  // cannot both accept the same source/game/round ID.
+  writeQueue = writeQueue.catch(() => {}).then(async () => {
+    const existing = await readAllRecords();
+    const known = new Set(existing.map((r) =>
+      source + "::" + (r.game || "unspecified") + "::" + r.roundId
+    ));
+    const batchKnown = new Set();
+    const accepted = [];
+    let duplicates = 0;
+
+    for (const record of records) {
+      const key = source + "::" + (record.game || "unspecified") + "::" + record.roundId;
+      if (known.has(key) || batchKnown.has(key)) {
+        duplicates += 1;
+        continue;
+      }
+      batchKnown.add(key);
+      accepted.push(record);
+    }
+
+    if (accepted.length) {
+      await fs.promises.mkdir(path.dirname(DATA_FILE), { recursive: true });
+      const lines = accepted.map((record) => JSON.stringify(record)).join("\n") + "\n";
+      await fs.promises.appendFile(DATA_FILE, lines, { encoding: "utf8", mode: 0o600 });
+    }
+    result = { accepted: accepted.length, duplicates };
   });
-  return writeQueue;
+  await writeQueue;
+  return result;
 }
 
 function sourceHealth(records) {
@@ -289,25 +314,11 @@ const server = http.createServer(async (req, res) => {
       });
       if (errors.length) return json(res, 400, { error: "One or more records failed validation.", details: errors });
 
-      const existing = await readAllRecords();
-      const known = new Set(existing.map((r) => source + "::" + (r.game || "unspecified") + "::" + r.roundId));
-      const batchKnown = new Set();
-      const accepted = [];
-      let duplicates = 0;
-      for (const record of normalized) {
-        const key = source + "::" + (record.game || "unspecified") + "::" + record.roundId;
-        if (known.has(key) || batchKnown.has(key)) {
-          duplicates += 1;
-          continue;
-        }
-        batchKnown.add(key);
-        accepted.push(record);
-      }
-      if (accepted.length) await appendRecords(accepted);
+      const persisted = await persistUniqueRecords(source, normalized);
       return json(res, 201, {
         source,
-        accepted: accepted.length,
-        duplicates,
+        accepted: persisted.accepted,
+        duplicates: persisted.duplicates,
         rejected: 0,
         note: "Accepted records are stored as supplied; ingestion does not verify the source or prove a live feed.",
         liveFeedVerified: false
