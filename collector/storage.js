@@ -119,7 +119,7 @@ export async function readAllRecords() {
   const rows = [];
   for (let offset = 0; ; offset += PAGE_SIZE) {
     const page = await supabaseRequest(
-      "aviator_rounds?select=source,game,round_id,multiplier,ended_at,received_at&order=ended_at.asc,round_id.asc",
+      "aviator_rounds?select=source,game,round_id,multiplier,ended_at,received_at&order=ended_at.asc,source.asc,game.asc,round_id.asc",
       { headers: { range: offset + "-" + (offset + PAGE_SIZE - 1), "range-unit": "items" } }
     );
     rows.push(...page.map(mapFromDatabase));
