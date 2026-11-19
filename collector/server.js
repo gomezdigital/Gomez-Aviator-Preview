@@ -1,15 +1,13 @@
 import http from "node:http";
-import fs from "node:fs";
-import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { analyzeRounds } from "./analytics/engine.js";
 import { analyzeIntelligence } from "./analytics/intelligence.js";
 import { assessDataQuality } from "./analytics/quality.js";
 import { buildAgentReport } from "./analytics/agents.js";
+import { readAllRecords, persistUniqueRecords, checkStorage, storageMode, persistentStorage } from "./storage.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PORT = Number(process.env.PORT || 8080);
-const DATA_FILE = path.resolve(process.env.DATA_FILE || path.join(__dirname, "data", "rounds.jsonl"));
 const INGEST_TOKEN = process.env.INGEST_API_TOKEN || "";
 const ALLOWED_SOURCES = new Set(
   (process.env.ALLOWED_SOURCES || "")
@@ -21,7 +19,6 @@ const CORS_ORIGINS = new Set(
 const MAX_BODY_BYTES = 256 * 1024;
 const MAX_RETURNED_ROUNDS = 500;
 const SOURCES = ["betway", "sportybet", "other-authorized-provider", "gamedata365", "user-import"];
-let writeQueue = Promise.resolve();
 
 function json(res, status, data, extraHeaders = {}) {
   res.writeHead(status, {
@@ -113,67 +110,13 @@ function normalizeRound(input, source) {
   return {
     record: {
       source,
-      ...(game ? { game } : {}),
+      game: game || "aviator",
       roundId,
       multiplier,
       endedAt: new Date(time).toISOString(),
       receivedAt: new Date().toISOString()
     }
   };
-}
-
-async function readAllRecords() {
-  try {
-    const content = await fs.promises.readFile(DATA_FILE, "utf8");
-    const rows = [];
-    for (const line of content.split("\n")) {
-      if (!line.trim()) continue;
-      try {
-        const row = JSON.parse(line);
-        if (row && typeof row === "object" && row.source && row.roundId) rows.push(row);
-      } catch {
-        // Ignore a damaged line, but preserve it on disk for investigation.
-      }
-    }
-    return rows;
-  } catch (error) {
-    if (error.code === "ENOENT") return [];
-    throw error;
-  }
-}
-
-async function persistUniqueRecords(source, records) {
-  let result;
-  // Serialize the read/deduplicate/write transaction so simultaneous requests
-  // cannot both accept the same source/game/round ID.
-  writeQueue = writeQueue.catch(() => {}).then(async () => {
-    const existing = await readAllRecords();
-    const known = new Set(existing.map((r) =>
-      source + "::" + (r.game || "unspecified") + "::" + r.roundId
-    ));
-    const batchKnown = new Set();
-    const accepted = [];
-    let duplicates = 0;
-
-    for (const record of records) {
-      const key = source + "::" + (record.game || "unspecified") + "::" + record.roundId;
-      if (known.has(key) || batchKnown.has(key)) {
-        duplicates += 1;
-        continue;
-      }
-      batchKnown.add(key);
-      accepted.push(record);
-    }
-
-    if (accepted.length) {
-      await fs.promises.mkdir(path.dirname(DATA_FILE), { recursive: true });
-      const lines = accepted.map((record) => JSON.stringify(record)).join("\n") + "\n";
-      await fs.promises.appendFile(DATA_FILE, lines, { encoding: "utf8", mode: 0o600 });
-    }
-    result = { accepted: accepted.length, duplicates };
-  });
-  await writeQueue;
-  return result;
 }
 
 function sourceHealth(records) {
@@ -205,9 +148,13 @@ const server = http.createServer(async (req, res) => {
     const url = new URL(req.url || "/", "http://localhost");
 
     if (req.method === "GET" && url.pathname === "/health") {
+      const storage = await checkStorage();
       return json(res, 200, {
         ok: true,
         service: "Gomez Aviator Intelligence Collector",
+        storageMode,
+        persistentStorage,
+        storage,
         liveProviderConnected: false,
         note: "Service health does not mean an Aviator source is connected."
       });
