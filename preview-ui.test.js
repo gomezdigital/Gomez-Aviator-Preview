@@ -1,8 +1,9 @@
 const test = require("node:test");
 const assert = require("node:assert/strict");
 const fs = require("node:fs");
+const path = require("node:path");
 
-const html = fs.readFileSync(new URL("./index.html", "file://" + __filename), "utf8");
+const html = fs.readFileSync(path.join(__dirname, "index.html"), "utf8");
 const requiredControls = [
   "csv-input", "reset-data", "quality-score", "quality-status", "quality-grid",
   "quality-warning", "distribution-breakdown", "distribution-source",
@@ -19,12 +20,13 @@ const requiredControls = [
 
 test("Data Lab exposes every control required by its research script", () => {
   for (const id of requiredControls) {
-    assert.match(html, new RegExp('\\bid=["']' + id + '["']'), "Missing Data Lab element: " + id);
+    assert.ok(html.includes('id="' + id + '"') || html.includes("id='" + id + "'"),
+      "Missing Data Lab element: " + id);
   }
 });
 
 test("HTML element IDs are unique", () => {
-  const ids = [...html.matchAll(/\\bid=["']([^"']+)["']/g)].map(match => match[1]);
+  const ids = [...html.matchAll(/\bid=["']([^"']+)["']/g)].map(match => match[1]);
   const duplicates = ids.filter((id, index) => ids.indexOf(id) !== index);
   assert.deepEqual([...new Set(duplicates)], []);
 });
