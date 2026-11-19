@@ -1,12 +1,10 @@
 import http from "node:http";
-import { fileURLToPath } from "node:url";
 import { analyzeRounds } from "./analytics/engine.js";
 import { analyzeIntelligence } from "./analytics/intelligence.js";
 import { assessDataQuality } from "./analytics/quality.js";
 import { buildAgentReport } from "./analytics/agents.js";
 import { readAllRecords, persistUniqueRecords, checkStorage, storageMode, persistentStorage } from "./storage.js";
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PORT = Number(process.env.PORT || 8080);
 const INGEST_TOKEN = process.env.INGEST_API_TOKEN || "";
 const ALLOWED_SOURCES = new Set(
