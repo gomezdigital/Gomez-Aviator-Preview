@@ -99,3 +99,18 @@
 
 .simulation-status{margin-top:12px;padding:11px 13px;border:1px solid #243b2a;background:#0d1710;border-radius:9px;color:#91b49a;font-size:10px;line-height:1.65}
 #run-flight-simulation:disabled{opacity:.65;cursor:wait;transform:none}
+
+/* Data Lab controls and tables */
+#view-data>.panel{margin-top:16px}
+#view-data label{display:block;margin:12px 0 6px;color:#9aaba0;font-size:11px}
+#view-data input,#view-data select{width:100%;max-width:360px;min-height:40px;padding:9px 11px;border:1px solid #2a382e;border-radius:9px;background:#101813;color:#edf5ef}
+#view-data button{margin:8px 8px 8px 0}
+#view-data #distribution-breakdown{display:grid;gap:12px}
+#view-data #time-period-table-wrap,#view-data #stability-table-wrap{overflow-x:auto;margin-top:12px}
+#view-data .history-item{display:flex;justify-content:space-between;gap:12px;padding:12px;margin:8px 0;border:1px solid #202d23;border-radius:9px;background:#101812}
+#view-data .history-details{display:grid;gap:4px;min-width:0}
+#view-data .history-details strong{overflow-wrap:anywhere;color:#e4eee7;font-size:11px}
+#view-data .history-details small{color:#8b9a90;font-size:9px}
+#view-data .history-score{color:var(--green);font:600 13px "Space Grotesk";white-space:nowrap}
+#view-data button:disabled{opacity:.5;cursor:not-allowed}
+@media(max-width:700px){#view-data .data-summary{grid-template-columns:1fr 1fr}#view-data input,#view-data select{max-width:none}#view-data button{width:100%;margin:6px 0}}
