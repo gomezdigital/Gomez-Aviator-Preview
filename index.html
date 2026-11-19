@@ -92,11 +92,11 @@
           <div class="health-row"><span>Heuristic quality score</span><b id="quality-score">—</b></div><div class="data-summary" id="quality-grid"></div>
           <p class="panel-copy" id="quality-warning">A quality score cannot authenticate a source or prove completeness.</p>
         </article>
-        <article class="panel">
+        <article class="panel distribution-panel">
           <div class="panel-title"><div><span class="overline">DISTRIBUTION</span><h2>Observed multiplier ranges</h2></div><span class="tag" id="distribution-source">DEMO DATA</span></div>
           <div id="distribution-breakdown"></div><p class="panel-copy" id="distribution-warning">Observed sample frequencies only; not future probabilities.</p>
         </article>
-        <article class="panel">
+        <article class="panel compare-panel">
           <div class="panel-title"><div><span class="overline">WALK-FORWARD RESEARCH</span><h2>Baseline comparison</h2></div><span class="tag">HISTORICAL TEST</span></div>
           <p class="panel-copy">Compare a simple historical baseline with a streak-conditioned estimate on later rows. This is retrospective evaluation, not next-flight prediction.</p>
           <label for="core-threshold">Target threshold (x)</label><input id="core-threshold" type="number" min="1.01" step="0.01" value="2">
@@ -115,13 +115,13 @@
           <button class="btn btn-quiet" id="export-dataset-compare" type="button">Export comparison JSON</button>
           <div class="message" id="dataset-comparison-result" role="status">Save at least two summaries to compare them.</div>
         </article>
-        <article class="panel">
+        <article class="panel time-period-panel">
           <div class="panel-title"><div><span class="overline">TIME-PERIOD ANALYSIS</span><h2>Historical grouping</h2></div><span class="tag" id="time-period-source">NOT RUN</span></div>
           <label for="time-period-select">Group observations by</label><select id="time-period-select"><option value="day">UTC day</option><option value="week">UTC week</option><option value="month" selected>UTC month</option></select>
           <button class="btn btn-quiet" id="run-time-period" type="button">Analyze time periods</button>
           <div class="message" id="time-period-result" role="status">Import records with timestamps to enable grouping.</div><div id="time-period-table-wrap"></div><p class="panel-copy" id="time-period-warning"></p>
         </article>
-        <article class="panel">
+        <article class="panel stability-panel">
           <div class="panel-title"><div><span class="overline">ROLLING STABILITY</span><h2>Window analysis</h2></div><span class="tag" id="stability-source">NOT RUN</span></div>
           <label for="stability-window">Window size</label><input id="stability-window" type="number" min="2" max="10000" value="100">
           <label for="stability-step">Step size</label><input id="stability-step" type="number" min="1" max="10000" value="50">
