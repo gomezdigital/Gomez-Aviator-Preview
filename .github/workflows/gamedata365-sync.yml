@@ -25,6 +25,11 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 22
+      - name: Validate research engine and preview UI
+        run: node --check research-core.js && node --test research-core.test.js && node --test preview-ui.test.js && node --check v2-preview.js && node --check live-data.js
+      - name: Run collector syntax checks and tests
+        working-directory: collector
+        run: npm run check && npm test
       - name: Check GameData365 live Aviator feed
         working-directory: collector
         env:
