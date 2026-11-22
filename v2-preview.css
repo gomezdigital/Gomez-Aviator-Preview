@@ -124,3 +124,13 @@
 .live-round-item strong{font-family:"Space Grotesk",sans-serif;font-size:16px}
 .live-round-item strong.high{color:var(--accent,#c5f36b)}
 @media(max-width:600px){.live-round-list{grid-template-columns:1fr}}
+
+
+/* Manual round capture workspace */
+.manual-capture-card{margin-bottom:18px}
+.manual-capture-card label{display:block;margin:12px 0 6px;color:#9aaba0;font-size:11px}
+.manual-capture-card input{display:block;width:100%;max-width:420px;min-height:42px;padding:10px 12px;border:1px solid #2a382e;border-radius:9px;background:#101813;color:#edf5ef}
+.manual-capture-card button{margin-top:14px}
+.manual-capture-card button:disabled{opacity:.55;cursor:wait}
+#manual-capture-status{overflow-wrap:anywhere;line-height:1.6}
+@media(max-width:700px){.manual-capture-card{padding:14px}.manual-capture-card input{max-width:none}.manual-capture-card button{width:100%}}
