@@ -18,7 +18,7 @@ const response = await fetch(`${collectorUrl}/api/v1/ingest`, {
   method: "POST",
   headers: { "content-type": "application/json", authorization: `Bearer ${ingestToken}` },
   body: JSON.stringify({ source: "gamedata365", rounds: history.rounds.slice(0, 500).map(({ game, roundId, multiplier, endedAt }) => ({ game, roundId, multiplier, endedAt })) }),
-  signal: AbortSignal.timeout(15000)
+  signal: AbortSignal.timeout(60000)
 });
 const body = await response.json().catch(() => ({}));
 if (!response.ok) throw new Error(`Collector ingest failed with HTTP ${response.status}: ${body.error || "unknown error"}`);
