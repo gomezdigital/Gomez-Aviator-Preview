@@ -3,6 +3,7 @@ import { randomUUID } from "node:crypto";
 import { analyzeRounds } from "./analytics/engine.js";
 import { buildNextFlightEstimate } from "./analytics/next-flight.js";
 import { analyzeIntelligence } from "./analytics/intelligence.js";
+import { analyzePatterns } from "./analytics/patterns.js";
 import { assessDataQuality } from "./analytics/quality.js";
 import { buildAgentReport } from "./analytics/agents.js";
 import { readAllRecords, persistUniqueRecords, persistPrediction, resolvePendingPredictions, checkStorage, storageMode, persistentStorage } from "./storage.js";
@@ -210,6 +211,29 @@ const server = http.createServer(async (req, res) => {
       const records = await readAllRecords();
       return json(res, 200, {
         intelligence: analyzeIntelligence(records, { game, source }),
+        liveFeedVerified: false
+      });
+    }
+
+
+    if (req.method === "GET" && url.pathname === "/api/v1/patterns") {
+      const game = (url.searchParams.get("game") || "aviator").trim().toLowerCase();
+      const source = (url.searchParams.get("source") || "").trim().toLowerCase();
+      const recentParam = Number(url.searchParams.get("recentSize") || 20);
+      const baselineParam = Number(url.searchParams.get("baselineSize") || 50);
+      const transitionParam = Number(url.searchParams.get("minimumTransitionCount") || 5);
+      if (game && !["aviator", "high-flyer", "jetx"].includes(game)) {
+        return json(res, 400, { error: "game must be aviator, high-flyer, or jetx." });
+      }
+      const records = await readAllRecords();
+      return json(res, 200, {
+        patterns: analyzePatterns(records, {
+          game,
+          source,
+          recentSize: Number.isInteger(recentParam) ? recentParam : 20,
+          baselineSize: Number.isInteger(baselineParam) ? baselineParam : 50,
+          minimumTransitionCount: Number.isInteger(transitionParam) ? transitionParam : 5
+        }),
         liveFeedVerified: false
       });
     }
