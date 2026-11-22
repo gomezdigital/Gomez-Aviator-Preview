@@ -12,6 +12,7 @@
   <link rel="stylesheet" href="v2-preview.css">
   <script src="research-core.js" defer></script>
   <script src="v2-preview.js" defer></script>
+  <script src="live-data.js" defer></script>
 </head>
 <body>
   <div class="app">
@@ -153,8 +154,30 @@
       </section>
 
       <section class="view" id="view-sources">
-        <div class="section-heading"><span class="overline">WORKSPACE / DATA SOURCES</span><h1>Source <span>Intelligence.</span></h1><p>Transparent source status and data provenance.</p></div>
-        <article class="panel source-card"><div class="panel-title"><div><span class="overline">SOURCE PRIORITY</span><h2>Betway Botswana</h2></div><span class="tag tag-muted">NOT CONNECTED</span></div><p class="panel-copy">Betway is a source we may investigate for lawful, authorized historical data access. No live feed is connected or verified.</p><div class="health-row"><span>Source verification</span><b class="pending">○ Pending</b></div><div class="health-row"><span>Collector API</span><b class="pending">○ Not configured</b></div><div class="health-row"><span>Last successful sync</span><b>—</b></div><div class="notice source-notice"><span>!</span><p>Use this project for research and simulation. It does not place bets or connect to betting accounts.</p></div></article>
+        <div class="section-heading"><span class="overline">WORKSPACE / DATA SOURCES</span><h1>Source <span>Intelligence.</span></h1><p>Live collector health, stored provider observations and retrospective analysis.</p></div>
+        <article class="panel source-card live-source-card">
+          <div class="panel-title"><div><span class="overline">PROVIDER CONNECTION</span><h2>GameData365 · Aviator</h2></div><span class="tag tag-muted" id="provider-status">CHECKING</span></div>
+          <p class="panel-copy">This workspace reads stored observations from the secured Gomez collector. The provider API key stays on the backend and is never sent to this page.</p>
+          <div class="health-row"><span>Collector API</span><b id="collector-status">Checking…</b></div>
+          <div class="health-row"><span>Persistent storage</span><b id="storage-status">Checking…</b></div>
+          <div class="health-row"><span>GameData365 records stored</span><b id="provider-record-count">—</b></div>
+          <div class="health-row"><span>Latest recorded round</span><b id="provider-latest-round">—</b></div>
+          <div class="health-row"><span>Ingestion permission</span><b id="provider-ingestion-status">—</b></div>
+          <button class="btn btn-green" id="refresh-live-data" type="button">Refresh stored data</button>
+          <div class="message" id="live-data-message" role="status">Checking collector and stored records…</div>
+          <div class="notice source-notice"><span>!</span><p>Stored historical observations are not a live video/game feed. Provider timestamps and data freshness are shown; no prediction of the next round is offered.</p></div>
+        </article>
+        <article class="panel live-analysis-card">
+          <div class="panel-title"><div><span class="overline">REAL OBSERVATIONS</span><h2>Recorded-data analysis</h2></div><span class="tag tag-muted" id="live-analysis-status">NO DATA</span></div>
+          <div class="health-row"><span>Sample size</span><b id="live-analysis-count">0</b></div>
+          <div class="health-row"><span>Observed mean</span><b id="live-analysis-mean">—</b></div>
+          <div class="health-row"><span>Observed median</span><b id="live-analysis-median">—</b></div>
+          <div class="health-row"><span>Rounds ≥ 2x</span><b id="live-analysis-2x">—</b></div>
+          <div class="health-row"><span>Rounds ≥ 5x</span><b id="live-analysis-5x">—</b></div>
+          <div class="health-row"><span>Data quality</span><b id="live-analysis-quality">—</b></div>
+          <div class="message" id="live-intelligence-output" role="status">No GameData365 observations have been loaded.</div>
+          <div class="live-round-list" id="live-round-list" aria-live="polite"></div>
+        </article>
       </section>
 
       <footer class="footer"><span>GOMEZ AVIATOR INTELLIGENCE</span><span>V2 PREVIEW · RESEARCH & SIMULATION ONLY</span></footer>
