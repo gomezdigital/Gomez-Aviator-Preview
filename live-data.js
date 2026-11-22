@@ -50,7 +50,7 @@
       const [health, sources, roundsResponse, analysisResponse, qualityResponse, intelligenceResponse] = await Promise.all([
         get("/health"),
         get("/api/v1/sources"),
-        get("/api/v1/rounds?game=aviator&source=gamedata365&limit=100"),
+        get("/api/v1/rounds?game=aviator&source=gamedata365&limit=500"),
         get("/api/v1/analysis?game=aviator&source=gamedata365&limit=500"),
         get("/api/v1/quality?game=aviator&source=gamedata365"),
         get("/api/v1/intelligence?game=aviator&source=gamedata365")
@@ -91,6 +91,10 @@
         set("live-intelligence-output", intelligence.message || "More stored rounds are required for a recent-window versus baseline comparison.");
       }
       renderRounds(rows);
+      if (rows.length && window.GomezPreview && typeof window.GomezPreview.loadRemoteObservations === "function") {
+        try { window.GomezPreview.loadRemoteObservations(rows, "GameData365 Aviator API"); }
+        catch (loadError) { console.warn("Could not load remote observations into Data Lab:", loadError.message); }
+      }
       const latest = source && source.lastRoundAt ? " Latest stored round: " + formatTime(source.lastRoundAt) + "." : "";
       const note = rows.length
         ? "Loaded " + rows.length + " stored GameData365 Aviator observation(s). These are historical records, not a live game stream or a forecast." + latest
