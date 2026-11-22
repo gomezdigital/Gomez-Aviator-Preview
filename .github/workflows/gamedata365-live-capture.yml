@@ -1,0 +1,38 @@
+name: GameData365 Aviator low-frequency live capture
+
+on:
+  schedule:
+    # Four checks per day = about 120 provider requests in a 30-day month.
+    # Keep below the provider's 200-request free monthly allowance.
+    - cron: "17 */6 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: gamedata365-aviator-live-capture
+  cancel-in-progress: false
+
+jobs:
+  capture:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Check out preview research branch
+        uses: actions/checkout@v4
+        with:
+          repository: gomezdigital/Gomez-Aviator-Preview
+          ref: fix/restore-preview-research-core
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Capture latest available Aviator round
+        working-directory: collector
+        env:
+          GAMEDATA365_API_KEY: ${{ secrets.GAMEDATA365_API_KEY }}
+          COLLECTOR_URL: https://gomez-aviator-collector.onrender.com
+          INGEST_API_TOKEN: ${{ secrets.INGEST_API_TOKEN }}
+          ALLOWED_SOURCES: gamedata365
+        run: npm run capture:gamedata365-live
