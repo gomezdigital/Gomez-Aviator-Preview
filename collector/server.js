@@ -1,4 +1,5 @@
 import http from "node:http";
+import { randomUUID } from "node:crypto";
 import { analyzeRounds } from "./analytics/engine.js";
 import { buildNextFlightEstimate } from "./analytics/next-flight.js";
 import { analyzeIntelligence } from "./analytics/intelligence.js";
@@ -8,6 +9,7 @@ import { readAllRecords, persistUniqueRecords, persistPrediction, resolvePending
 
 const PORT = Number(process.env.PORT || 8080);
 const INGEST_TOKEN = process.env.INGEST_API_TOKEN || "";
+const MANUAL_CAPTURE_TOKEN = process.env.MANUAL_CAPTURE_TOKEN || "";
 const ALLOWED_SOURCES = new Set(
   (process.env.ALLOWED_SOURCES || "")
     .split(",").map((s) => s.trim().toLowerCase()).filter(Boolean)
@@ -17,7 +19,7 @@ const CORS_ORIGINS = new Set(
 );
 const MAX_BODY_BYTES = 256 * 1024;
 const MAX_RETURNED_ROUNDS = 500;
-const SOURCES = ["betway", "sportybet", "other-authorized-provider", "gamedata365", "user-import"];
+const SOURCES = ["betway", "sportybet", "other-authorized-provider", "gamedata365", "user-import", "manual-observation"];
 
 function json(res, status, data, extraHeaders = {}) {
   res.writeHead(status, {
@@ -61,7 +63,7 @@ function applyCors(req, res) {
   if (origin) {
     res.setHeader("access-control-allow-origin", origin);
     res.setHeader("vary", "Origin");
-    res.setHeader("access-control-allow-headers", "Authorization, Content-Type");
+    res.setHeader("access-control-allow-headers", "Authorization, Content-Type, X-Manual-Capture-Token");
     res.setHeader("access-control-allow-methods", "GET, POST, OPTIONS");
   }
   return true;
@@ -275,6 +277,41 @@ const server = http.createServer(async (req, res) => {
         sourceFilter: source || null,
         gameFilter: game || null,
         liveFeedVerified: false
+      });
+    }
+
+    if (req.method === "POST" && url.pathname === "/api/v1/manual-capture") {
+      if (!timingSafeTokenMatch(req.headers["x-manual-capture-token"], MANUAL_CAPTURE_TOKEN)) {
+        return json(res, 401, { error: "A valid manual-capture access token is required." });
+      }
+      if (!persistentStorage) return json(res, 503, {
+        status: "unavailable",
+        reason: "PERSISTENT_STORAGE_REQUIRED",
+        message: "Manual observations require persistent Supabase storage."
+      });
+      const body = await readBody(req);
+      const normalized = normalizeRound({
+        roundId: "manual-" + randomUUID(),
+        game: "aviator",
+        multiplier: body?.multiplier,
+        endedAt: new Date().toISOString()
+      }, "manual-observation");
+      if (normalized.error) return json(res, 400, { error: normalized.error });
+      const round = normalized.record;
+      const persisted = await persistUniqueRecords("manual-observation", [round]);
+      const resolution = await resolvePendingPredictions(round);
+      return json(res, 201, {
+        source: "manual-observation",
+        accepted: persisted.accepted,
+        duplicates: persisted.duplicates,
+        predictionsResolved: resolution.resolved,
+        round: {
+          roundId: round.roundId,
+          multiplier: round.multiplier,
+          endedAt: round.endedAt,
+          receivedAt: round.receivedAt
+        },
+        note: "This is a manually observed result, not an automatically verified game feed."
       });
     }
 
