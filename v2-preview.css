@@ -114,3 +114,13 @@
 #view-data .history-score{color:var(--green);font:600 13px "Space Grotesk";white-space:nowrap}
 #view-data button:disabled{opacity:.5;cursor:not-allowed}
 @media(max-width:700px){#view-data .data-summary{grid-template-columns:1fr 1fr}#view-data input,#view-data select{max-width:none}#view-data button{width:100%;margin:6px 0}}
+
+
+/* Live collector data panel */
+.live-source-card,.live-analysis-card{margin-bottom:18px}
+.live-round-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:14px}
+.live-round-item{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 12px;border:1px solid var(--line,#26332d);border-radius:10px;background:rgba(255,255,255,.025)}
+.live-round-item small{color:var(--muted,#8b9991);font-size:11px}
+.live-round-item strong{font-family:"Space Grotesk",sans-serif;font-size:16px}
+.live-round-item strong.high{color:var(--accent,#c5f36b)}
+@media(max-width:600px){.live-round-list{grid-template-columns:1fr}}
