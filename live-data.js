@@ -103,6 +103,25 @@
         set("live-intelligence-output", intelligence.message || "More stored rounds are required for a recent-window versus baseline comparison.");
       }
       renderRounds(rows);
+      try {
+        const response = await get("/api/v1/prediction/next?game=aviator&source=gamedata365");
+        const estimate = response.prediction || {};
+        set("next-flight-range", estimate.mostLikelyRange || "—");
+        set("next-flight-status", estimate.status === "estimate_available" ? "Historical estimate · not certainty" : "Estimate unavailable");
+        set("next-flight-message", estimate.message || estimate.warning || "No estimate available.");
+        set("next-flight-asof", estimate.asOfAt ? "As of " + formatTime(estimate.asOfAt) : "No estimate recorded");
+        set("next-flight-evidence", estimate.status === "estimate_available"
+          ? "Sample: " + estimate.sampleSize + " rounds · Most frequent historical band: " +
+            (100 * estimate.mostLikelyProbability).toFixed(1) + "% smoothed frequency · Freshness: " +
+            estimate.dataFreshnessSeconds + " seconds. This is not a reliable next-flight forecast."
+          : (estimate.reason || "Prediction endpoint unavailable."));
+      } catch (predictionError) {
+        set("next-flight-range", "—");
+        set("next-flight-status", "Prediction service not connected");
+        set("next-flight-message", "The collector has not been updated with the time-aware prediction endpoint yet.");
+        set("next-flight-asof", "No estimate recorded");
+        set("next-flight-evidence", "Historical observations only; no next-flight estimate was saved.");
+      }
       if (rows.length && window.GomezPreview && typeof window.GomezPreview.loadRemoteObservations === "function") {
         try { window.GomezPreview.loadRemoteObservations(rows, "GameData365 Aviator API"); }
         catch (loadError) { console.warn("Could not load remote observations into Data Lab:", loadError.message); }
