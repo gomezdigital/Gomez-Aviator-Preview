@@ -40,6 +40,11 @@ jobs:
         env:
           GAMEDATA365_API_KEY: ${{ secrets.GAMEDATA365_API_KEY }}
         run: npm run probe:gamedata365
+      - name: Check GameData365 Aviator history access
+        working-directory: collector
+        env:
+          GAMEDATA365_API_KEY: ${{ secrets.GAMEDATA365_API_KEY }}
+        run: npm run probe:gamedata365-history
 
   sync:
     if: ${{ inputs.sync_to_collector }}
