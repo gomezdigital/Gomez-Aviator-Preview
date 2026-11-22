@@ -139,8 +139,81 @@
       if (button) { button.disabled = false; button.textContent = "Refresh stored data"; }
     }
   }
+  async function recordManualObservation() {
+    const button = $("save-manual-observation");
+    const token = $("manual-capture-token")?.value.trim();
+    const multiplier = Number($("manual-multiplier")?.value);
+    const status = $("manual-capture-status");
+    if (!token) { if (status) status.textContent = "Enter the private capture access token first."; return; }
+    if (!Number.isFinite(multiplier) || multiplier < 1 || multiplier > 100000000) {
+      if (status) status.textContent = "Enter a valid multiplier of at least 1.00x.";
+      return;
+    }
+    if (button) { button.disabled = true; button.textContent = "Recording…"; }
+    if (status) status.textContent = "Sending the observation securely to the collector…";
+    try {
+      const response = await fetch(API + "/api/v1/manual-capture", {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+          "accept": "application/json",
+          "X-Manual-Capture-Token": token
+        },
+        body: JSON.stringify({ multiplier }),
+        cache: "no-store",
+        signal: AbortSignal.timeout(30000)
+      });
+      const body = await response.json();
+      if (!response.ok) throw new Error(body.message || body.error || ("Collector returned HTTP " + response.status));
+      if (status) status.textContent = body.accepted
+        ? "Recorded " + Number(body.round.multiplier).toFixed(2) + "x at " + formatTime(body.round.endedAt) + " CAT. Stored in Supabase."
+        : "Observation was not added (duplicate or storage response).";
+      const field = $("manual-multiplier");
+      if (field) field.value = "";
+      await refreshManualObservations();
+    } catch (error) {
+      if (status) status.textContent = error.message || "Could not record the observation.";
+    } finally {
+      if (button) { button.disabled = false; button.textContent = "Record observed round"; }
+    }
+  }
+
+  async function refreshManualObservations() {
+    try {
+      const response = await get("/api/v1/rounds?game=aviator&source=manual-observation&limit=100");
+      const rows = Array.isArray(response.rounds) ? response.rounds : [];
+      set("manual-round-count", response.count || rows.length);
+      set("manual-latest-round", rows[0]?.endedAt ? formatTime(rows[0].endedAt) : "No manual records yet");
+      const host = $("manual-round-list");
+      if (!host) return;
+      host.replaceChildren();
+      rows.slice(0, 10).forEach((round) => {
+        const item = document.createElement("div");
+        item.className = "live-round-item";
+        const time = document.createElement("small");
+        time.textContent = formatTime(round.endedAt);
+        const value = document.createElement("strong");
+        value.textContent = Number(round.multiplier).toFixed(2) + "x";
+        if (Number(round.multiplier) >= 5) value.classList.add("high");
+        item.append(time, value);
+        host.appendChild(item);
+      });
+      if (!rows.length) {
+        const empty = document.createElement("p");
+        empty.className = "panel-copy";
+        empty.textContent = "No manual observations recorded yet.";
+        host.appendChild(empty);
+      }
+    } catch (error) {
+      set("manual-round-count", "Unavailable");
+      set("manual-latest-round", "Could not load records");
+    }
+  }
+
   document.addEventListener("DOMContentLoaded", () => {
     $("refresh-live-data")?.addEventListener("click", refresh);
+    $("save-manual-observation")?.addEventListener("click", recordManualObservation);
+    refreshManualObservations();
     refresh();
   });
 })();
