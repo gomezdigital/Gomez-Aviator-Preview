@@ -13,17 +13,22 @@ export function buildNextFlightEstimate(input, {
   minSample = MIN_SAMPLE,
   maxSample = MAX_SAMPLE
 } = {}) {
+  const asOfMs = Date.parse(asOfAt);
+  if (!Number.isFinite(asOfMs)) {
+    return { status: "unavailable", reason: "CLOCK_INVALID", message: "The observation clock is invalid; no estimate was created." };
+  }
+  // Strict cutoff: future-dated or subsequently ingested rounds cannot enter this estimate.
   const rows = (Array.isArray(input) ? input : [])
     .filter((r) => r && Number.isFinite(Number(r.multiplier)) &&
-      Number(r.multiplier) >= 1 && Number.isFinite(Date.parse(r.endedAt)))
+      Number(r.multiplier) >= 1 && Number.isFinite(Date.parse(r.endedAt)) &&
+      Date.parse(r.endedAt) <= asOfMs)
     .sort((a, b) => Date.parse(a.endedAt) - Date.parse(b.endedAt));
   const latest = rows.at(-1);
-  if (!latest) return { status: "unavailable", reason: "NO_OBSERVATIONS", message: "No valid completed rounds are available." };
+  if (!latest) return { status: "unavailable", reason: "NO_OBSERVATIONS", message: "No valid completed rounds at or before the prediction time are available." };
 
-  const asOfMs = Date.parse(asOfAt);
   const latestMs = Date.parse(latest.endedAt);
   const freshnessSeconds = Math.floor((asOfMs - latestMs) / 1000);
-  if (!Number.isFinite(asOfMs) || freshnessSeconds < 0) {
+  if (freshnessSeconds < 0) {
     return { status: "unavailable", reason: "CLOCK_INVALID", message: "The observation clock is invalid; no estimate was created." };
   }
   if (freshnessSeconds > maxFreshnessSeconds) {
