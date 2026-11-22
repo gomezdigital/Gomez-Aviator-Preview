@@ -8,6 +8,11 @@ on:
         required: true
         default: fix/restore-preview-research-core
         type: string
+      sync_to_collector:
+        description: Import the provider history into Render and Supabase (requires INGEST_API_TOKEN Actions secret)
+        required: true
+        default: false
+        type: boolean
 
 permissions:
   contents: read
@@ -35,3 +40,26 @@ jobs:
         env:
           GAMEDATA365_API_KEY: ${{ secrets.GAMEDATA365_API_KEY }}
         run: npm run probe:gamedata365
+
+  sync:
+    if: ${{ inputs.sync_to_collector }}
+    needs: probe
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Check out selected preview branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref }}
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Import provider history into collector
+        working-directory: collector
+        env:
+          GAMEDATA365_API_KEY: ${{ secrets.GAMEDATA365_API_KEY }}
+          COLLECTOR_URL: https://gomez-aviator-collector.onrender.com
+          INGEST_API_TOKEN: ${{ secrets.INGEST_API_TOKEN }}
+          ALLOWED_SOURCES: gamedata365
+        run: npm run sync:gamedata365
