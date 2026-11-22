@@ -14,7 +14,7 @@
       method: "GET",
       headers: { accept: "application/json" },
       cache: "no-store",
-      signal: AbortSignal.timeout(25000)
+      signal: AbortSignal.timeout(60000)
     });
     if (!response.ok) throw new Error("Collector returned HTTP " + response.status + " for " + path);
     return response.json();
