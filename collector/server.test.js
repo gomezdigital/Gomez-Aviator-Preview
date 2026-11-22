@@ -45,6 +45,7 @@ before(async () => {
       PORT: String(port),
       DATA_FILE: path.join(tempDir, "rounds.jsonl"),
       INGEST_API_TOKEN: "test-only-secret",
+      MANUAL_CAPTURE_TOKEN: "manual-test-secret",
       ALLOWED_SOURCES: "gamedata365",
       CORS_ORIGINS: "https://gomezdigital.github.io"
     },
@@ -140,6 +141,29 @@ test("round endpoint returns an empty list before ingestion", async () => {
   assert.equal(response.status, 200);
   assert.deepEqual(body.rounds, []);
   assert.equal(body.count, 0);
+});
+
+test("manual capture rejects requests without its dedicated access token", async () => {
+  const response = await fetch(baseUrl + "/api/v1/manual-capture", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ multiplier: 1.75 })
+  });
+  assert.equal(response.status, 401);
+});
+
+test("manual capture requires persistent storage even with a valid token", async () => {
+  const response = await fetch(baseUrl + "/api/v1/manual-capture", {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+      "X-Manual-Capture-Token": "manual-test-secret"
+    },
+    body: JSON.stringify({ multiplier: 1.75 })
+  });
+  const body = await response.json();
+  assert.equal(response.status, 503);
+  assert.equal(body.reason, "PERSISTENT_STORAGE_REQUIRED");
 });
 
 test("ingestion rejects requests without a bearer token", async () => {
