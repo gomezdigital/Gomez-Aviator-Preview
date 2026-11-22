@@ -17,7 +17,8 @@ function makeNode() {
     classList: { add() {} },
     replaceChildren() { this.children = []; },
     append(...nodes) { this.children.push(...nodes); },
-    appendChild(node) { this.children.push(node); }
+    appendChild(node) { this.children.push(node); },
+    addEventListener() {}
   };
 }
 
