@@ -126,6 +126,14 @@ test("analysis endpoint rejects unsupported game filters", async () => {
   assert.equal(response.status, 400);
 });
 
+test("next-flight endpoint refuses to create estimates without persistent prediction storage", async () => {
+  const response = await fetch(baseUrl + "/api/v1/prediction/next?game=aviator&source=gamedata365");
+  const body = await response.json();
+  assert.equal(response.status, 503);
+  assert.equal(body.status, "unavailable");
+  assert.equal(body.reason, "PERSISTENT_STORAGE_REQUIRED");
+});
+
 test("round endpoint returns an empty list before ingestion", async () => {
   const response = await fetch(baseUrl + "/api/v1/rounds?limit=10");
   const body = await response.json();
