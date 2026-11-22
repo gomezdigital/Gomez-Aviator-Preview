@@ -27,6 +27,8 @@ jobs:
         run: node --test research-core.test.js
       - name: Test preview Data Lab interface
         run: node --test preview-ui.test.js
+      - name: Test live collector to Data Lab integration
+        run: node --test live-data.test.js
       - name: Check preview frontend syntax
         run: node --check v2-preview.js && node --check live-data.js
       - name: Check original research engine syntax
