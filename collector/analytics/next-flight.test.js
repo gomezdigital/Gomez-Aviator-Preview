@@ -34,3 +34,15 @@ test("insufficient sample never produces a next-flight estimate", () => {
   assert.equal(result.status, "unavailable");
   assert.equal(result.reason, "INSUFFICIENT_SAMPLE");
 });
+
+test("future-dated rounds are excluded from the prediction data cutoff", () => {
+  const asOfAt = "2026-11-22T10:00:30.000Z";
+  const input = [
+    ...rows(),
+    { roundId: "future-round", multiplier: 99, endedAt: "2026-11-22T10:00:31.000Z" }
+  ];
+  const result = buildNextFlightEstimate(input, { asOfAt });
+  assert.equal(result.status, "estimate_available");
+  assert.notEqual(result.dataCutoffRoundId, "future-round");
+  assert.ok(Date.parse(result.dataCutoffEndedAt) <= Date.parse(asOfAt));
+});
