@@ -248,9 +248,13 @@ const server = http.createServer(async (req, res) => {
         prediction: estimate,
         status: "pending"
       });
+      const storedEstimate = saved?.prediction && typeof saved.prediction === "object"
+        ? { ...saved.prediction, id: saved.id, asOfAt: saved.as_of_at }
+        : { ...estimate, id: saved?.id || null };
       return json(res, 200, {
-        prediction: { ...estimate, id: saved?.id || null },
+        prediction: storedEstimate,
         saved: Boolean(saved),
+        reusedExisting: Boolean(saved?.as_of_at && saved.as_of_at !== estimate.asOfAt),
         note: "This estimate targets the first subsequent round observed by the connected data source, which may not be the actual next game flight if intervening rounds were missed."
       });
     }
