@@ -95,13 +95,15 @@ test("live-data reader loads stored GameData365 records into the Data Lab", asyn
   listeners.get("DOMContentLoaded")();
   await new Promise((resolve) => setTimeout(resolve, 0));
 
-  assert.equal(requested.length, 6);
+  assert.equal(requested.length, 7);
   assert.ok(requested.includes("/health"));
   assert.ok(requested.includes("/api/v1/sources"));
   assert.ok(requested.includes("/api/v1/rounds?game=aviator&source=gamedata365&limit=500"));
   assert.ok(requested.includes("/api/v1/analysis?game=aviator&source=gamedata365&limit=500"));
   assert.ok(requested.includes("/api/v1/quality?game=aviator&source=gamedata365"));
   assert.ok(requested.includes("/api/v1/intelligence?game=aviator&source=gamedata365"));
+  assert.ok(requested.includes("/api/v1/prediction/next?game=aviator&source=gamedata365"));
+  assert.equal(nodes.get("next-flight-status").textContent, "Prediction service not connected");
 
   assert.equal(nodes.get("collector-status").textContent, "ONLINE");
   assert.equal(nodes.get("storage-status").textContent, "SUPABASE · PERSISTENT");
