@@ -59,6 +59,20 @@ after(async () => {
   if (tempDir) await fs.rm(tempDir, { recursive: true, force: true });
 });
 
+test("time endpoint returns an authoritative UTC timestamp and Botswana timezone", async () => {
+  const beforeRequest = Date.now();
+  const response = await fetch(baseUrl + "/api/v1/time");
+  const afterResponse = Date.now();
+  const body = await response.json();
+  const serverTime = Date.parse(body.serverTime);
+  assert.equal(response.status, 200);
+  assert.equal(body.timezone, "Africa/Gaborone");
+  assert.equal(body.timezoneLabel, "CAT");
+  assert.equal(body.source, "collector-server");
+  assert.ok(Number.isFinite(serverTime));
+  assert.ok(serverTime >= beforeRequest - 5000 && serverTime <= afterResponse + 5000);
+});
+
 test("health endpoint reports service health but not a live feed", async () => {
   const response = await fetch(baseUrl + "/health");
   const body = await response.json();
