@@ -15,7 +15,12 @@ const requiredControls = [
   "time-period-warning", "time-period-source", "stability-window",
   "stability-step", "run-stability", "stability-result", "stability-table-wrap",
   "stability-warning", "stability-source", "export-research-json",
-  "export-research-html", "research-report-result", "export-history", "clear-history"
+  "export-research-html", "research-report-result", "export-history", "clear-history",
+  "provider-status", "collector-status", "storage-status", "provider-record-count",
+  "provider-latest-round", "provider-ingestion-status", "refresh-live-data",
+  "live-data-message", "live-analysis-status", "live-analysis-count", "live-analysis-mean",
+  "live-analysis-median", "live-analysis-2x", "live-analysis-5x", "live-analysis-quality",
+  "live-intelligence-output", "live-round-list"
 ];
 
 test("Data Lab exposes every control required by its research script", () => {
@@ -29,4 +34,14 @@ test("HTML element IDs are unique", () => {
   const ids = [...html.matchAll(/\bid=["']([^"']+)["']/g)].map(match => match[1]);
   const duplicates = ids.filter((id, index) => ids.indexOf(id) !== index);
   assert.deepEqual([...new Set(duplicates)], []);
+});
+
+
+test("preview loads the public live-data reader without embedding provider secrets", () => {
+  assert.ok(html.includes('src="live-data.js"'));
+  const liveScript = fs.readFileSync(path.join(__dirname, "live-data.js"), "utf8");
+  assert.ok(liveScript.includes("/api/v1/analysis"));
+  assert.ok(liveScript.includes("/api/v1/quality"));
+  assert.ok(!liveScript.includes("GAMEDATA365_API_KEY"));
+  assert.ok(!liveScript.includes("SUPABASE_SERVICE_ROLE_KEY"));
 });
