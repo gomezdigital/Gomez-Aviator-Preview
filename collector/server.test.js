@@ -127,6 +127,22 @@ test("intelligence endpoint reports insufficient data without claiming a live fe
   assert.equal(body.liveFeedVerified, false);
 });
 
+
+test("patterns endpoint reports insufficient historical data without claiming a live feed", async () => {
+  const response = await fetch(baseUrl + "/api/v1/patterns?game=aviator&source=gamedata365");
+  const body = await response.json();
+  assert.equal(response.status, 200);
+  assert.equal(body.patterns.status, "INSUFFICIENT_DATA");
+  assert.equal(body.patterns.sampleSize, 0);
+  assert.equal(body.patterns.predictive, false);
+  assert.equal(body.liveFeedVerified, false);
+});
+
+test("patterns endpoint rejects unsupported game filters", async () => {
+  const response = await fetch(baseUrl + "/api/v1/patterns?game=unknown");
+  assert.equal(response.status, 400);
+});
+
 test("analysis endpoint reports an empty historical sample before ingestion", async () => {
   const response = await fetch(baseUrl + "/api/v1/analysis?game=aviator");
   const body = await response.json();
