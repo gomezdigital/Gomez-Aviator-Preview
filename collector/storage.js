@@ -145,6 +145,18 @@ export async function persistUniqueRecords(source, records) {
 
 export async function persistPrediction(prediction) {
   if (!useSupabase) throw new Error("Prediction ledger requires persistent Supabase storage.");
+  // A dashboard refresh must not create duplicate pending estimates from the same cutoff round.
+  const lookup = new URLSearchParams({
+    select: "id,as_of_at,display_timezone,data_cutoff_round_id,data_cutoff_ended_at,data_freshness_seconds,sample_size,model_version,prediction,status",
+    game: "eq." + prediction.game,
+    source: "eq." + prediction.source,
+    status: "eq.pending",
+    data_cutoff_round_id: "eq." + prediction.data_cutoff_round_id,
+    order: "as_of_at.desc",
+    limit: "1"
+  });
+  const existing = await supabaseRequest("aviator_predictions?" + lookup.toString());
+  if (existing[0]) return existing[0];
   const rows = await supabaseRequest("aviator_predictions", {
     method: "POST",
     headers: { prefer: "return=representation" },
