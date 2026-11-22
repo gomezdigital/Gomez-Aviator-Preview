@@ -6,10 +6,11 @@
   "type": "module",
   "scripts": {
     "start": "node server.js",
-    "check": "node --check server.js && node --check storage.js && node --check storage.test.js && node --check ingestion.integration.test.js && node --check adapters/normalize.js && node --check adapters/index.js && node --check providers/gamedata365.js && node --check scripts/gamedata365-sync.js && node --check scripts/gamedata365-probe.js && node --check analytics/engine.js && node --check analytics/intelligence.js && node --check analytics/quality.js && node --check analytics/agents.js",
+    "check": "node --check server.js && node --check storage.js && node --check storage.test.js && node --check ingestion.integration.test.js && node --check adapters/normalize.js && node --check adapters/index.js && node --check providers/gamedata365.js && node --check scripts/gamedata365-sync.js && node --check scripts/gamedata365-probe.js && node --check scripts/gamedata365-history-probe.js && node --check analytics/engine.js && node --check analytics/intelligence.js && node --check analytics/quality.js && node --check analytics/agents.js",
     "test": "node --test server.test.js ingestion.integration.test.js storage.test.js adapters/normalize.test.js providers/gamedata365.test.js analytics/engine.test.js analytics/intelligence.test.js analytics/quality.test.js analytics/agents.test.js",
     "sync:gamedata365": "node scripts/gamedata365-sync.js",
-    "probe:gamedata365": "node scripts/gamedata365-probe.js"
+    "probe:gamedata365": "node scripts/gamedata365-probe.js",
+    "probe:gamedata365-history": "node scripts/gamedata365-history-probe.js"
   },
   "engines": {
     "node": ">=20"
