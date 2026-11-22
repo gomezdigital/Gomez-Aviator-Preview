@@ -169,6 +169,8 @@ export async function resolvePendingPredictions(round) {
   if (!useSupabase) return { resolved: 0 };
   const params = new URLSearchParams({
     status: "eq.pending",
+    source: "eq." + round.source,
+    game: "eq." + (round.game || "aviator"),
     as_of_at: "lt." + round.endedAt,
     select: "id"
   });
