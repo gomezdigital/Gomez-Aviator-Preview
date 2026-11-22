@@ -75,8 +75,8 @@
       const low = bins.below2x;
       const mid = bins.from2xTo5x;
       set("live-analysis-2x", low && analysis.sampleSize ? (100 * (1 - low.count / analysis.sampleSize)).toFixed(2) + "%" : "—");
-      set("live-analysis-5x", bins.atLeast10x && mid && analysis.sampleSize
-        ? (100 * ((mid.count + (bins.from5xTo10x?.count || 0) + bins.atLeast10x.count) / analysis.sampleSize)).toFixed(2) + "%"
+      set("live-analysis-5x", analysis.sampleSize
+        ? (100 * (((bins.from5xTo10x?.count || 0) + (bins.atLeast10x?.count || 0)) / analysis.sampleSize)).toFixed(2) + "%"
         : "—");
       set("live-analysis-quality", quality.status ? quality.status + " · " + (quality.freshness?.status || "FRESHNESS UNKNOWN") : "—");
       if (intelligence.status === "COMPARISON_AVAILABLE" && intelligence.windows) {
