@@ -143,6 +143,36 @@ export async function persistUniqueRecords(source, records) {
   return { accepted, duplicates: records.length - accepted };
 }
 
+export async function persistPrediction(prediction) {
+  if (!useSupabase) throw new Error("Prediction ledger requires persistent Supabase storage.");
+  const rows = await supabaseRequest("aviator_predictions", {
+    method: "POST",
+    headers: { prefer: "return=representation" },
+    body: JSON.stringify(prediction)
+  });
+  return rows[0] || null;
+}
+
+export async function resolvePendingPredictions(round) {
+  if (!useSupabase) return { resolved: 0 };
+  const params = new URLSearchParams({
+    status: "eq.pending",
+    as_of_at: "lt." + round.endedAt,
+    select: "id"
+  });
+  const rows = await supabaseRequest("aviator_predictions?" + params.toString(), {
+    method: "PATCH",
+    headers: { prefer: "return=representation" },
+    body: JSON.stringify({
+      status: "resolved",
+      target_round_id: String(round.roundId),
+      actual_multiplier: Number(round.multiplier),
+      resolved_at: round.endedAt
+    })
+  });
+  return { resolved: rows.length };
+}
+
 export async function checkStorage() {
   if (!useSupabase) return { ok: true, mode: storageMode, persistent: false };
   await supabaseRequest("aviator_rounds?select=id&limit=1");
