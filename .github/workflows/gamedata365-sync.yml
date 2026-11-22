@@ -2,6 +2,12 @@ name: GameData365 Aviator live-feed check
 
 on:
   workflow_dispatch:
+    inputs:
+      ref:
+        description: Branch to test (preview development branch)
+        required: true
+        default: fix/restore-preview-research-core
+        type: string
 
 permissions:
   contents: read
@@ -9,15 +15,22 @@ permissions:
 jobs:
   probe:
     runs-on: ubuntu-latest
-    timeout-minutes: 2
+    timeout-minutes: 3
     steps:
-      - name: Check out preview branch
+      - name: Check out selected preview branch
         uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref }}
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 22
-      - name: Probe GameData365 live Aviator feed
+      - name: Validate research engine and preview UI
+        run: node --check research-core.js && node --test research-core.test.js && node --test preview-ui.test.js && node --check v2-preview.js && node --check live-data.js
+      - name: Run collector syntax checks and tests
+        working-directory: collector
+        run: npm run check && npm test
+      - name: Check GameData365 live Aviator feed
         working-directory: collector
         env:
           GAMEDATA365_API_KEY: ${{ secrets.GAMEDATA365_API_KEY }}
