@@ -148,6 +148,15 @@ const server = http.createServer(async (req, res) => {
 
     const url = new URL(req.url || "/", "http://localhost");
 
+    if (req.method === "GET" && url.pathname === "/api/v1/time") {
+      return json(res, 200, {
+        serverTime: new Date().toISOString(),
+        timezone: "Africa/Gaborone",
+        timezoneLabel: "CAT",
+        source: "collector-server"
+      });
+    }
+
     if (req.method === "GET" && url.pathname === "/health") {
       const storage = await checkStorage();
       return json(res, 200, {
