@@ -106,6 +106,7 @@ test("live-data reader loads stored GameData365 records into the Data Lab", asyn
   assert.equal(nodes.get("collector-status").textContent, "ONLINE");
   assert.equal(nodes.get("storage-status").textContent, "SUPABASE · PERSISTENT");
   assert.equal(nodes.get("provider-record-count").textContent, "50");
+  assert.equal(nodes.get("provider-latest-round").textContent, "22/11/2026, 11:02:00 CAT");
   assert.equal(nodes.get("live-analysis-count").textContent, "2");
   assert.equal(nodes.get("live-analysis-mean").textContent, "1.8750x");
   assert.equal(nodes.get("live-analysis-median").textContent, "1.8750x");
