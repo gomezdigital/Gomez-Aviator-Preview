@@ -665,5 +665,52 @@
     URL.revokeObjectURL(url);
   });
 
+
+  // Public bridge for loading verified-provider observations into the Data Lab.
+  // Raw observations stay in memory; only import metadata is kept in local storage.
+  window.GomezPreview = window.GomezPreview || {};
+  window.GomezPreview.loadRemoteObservations = function (input, sourceLabel = "Remote provider data") {
+    if (!Array.isArray(input)) throw new Error("Remote observations must be an array.");
+    const observations = input
+      .filter((row) => row && typeof row === "object")
+      .map((row) => ({
+        multiplier: Number(row.multiplier),
+        timestamp: String(row.endedAt || row.timestamp || ""),
+        roundId: String(row.roundId || row.round_id || "")
+      }))
+      .filter((row) => row.roundId && Number.isFinite(row.multiplier) &&
+        row.multiplier >= 1 && Number.isFinite(Date.parse(row.timestamp)))
+      .sort((a, b) => Date.parse(a.timestamp) - Date.parse(b.timestamp));
+    if (!observations.length) throw new Error("No valid timestamped remote observations were returned.");
+    if (!window.GomezResearchCore || typeof window.GomezResearchCore.auditDataset !== "function") {
+      throw new Error("Research core is not ready; reload the preview and try again.");
+    }
+    skippedRows = input.length - observations.length;
+    rounds = observations.map((row) => row.multiplier);
+    window.GomezObservations = observations;
+    datasetIsImported = true;
+    const audit = window.GomezResearchCore.auditDataset(observations, skippedRows);
+    importHistory.unshift({
+      id: (window.crypto && crypto.randomUUID) ? crypto.randomUUID() : String(Date.now()) + "-remote",
+      fileName: sourceLabel,
+      importedAt: new Date().toISOString(),
+      fileSizeBytes: 0,
+      records: observations.length,
+      skippedRows,
+      timestampCoverage: (audit.timestampCoverage * 100).toFixed(1),
+      qualityScore: audit.score,
+      qualityStatus: audit.status,
+      sourceVerification: "provider-reported; not independently verified"
+    });
+    importHistory = importHistory.slice(0, 20);
+    saveImportHistory();
+    const message = $("#data-message");
+    if (message) message.textContent = "Loaded " + observations.length +
+      " timestamped observations from " + sourceLabel +
+      ". They are provider-reported historical results; source completeness is not independently verified.";
+    render();
+    return { loaded: observations.length, skipped: skippedRows, quality: audit.status };
+  };
+
   render();
 })();
