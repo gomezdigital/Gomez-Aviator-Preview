@@ -5,6 +5,105 @@
   const $ = (id) => document.getElementById(id);
   const set = (id, value) => { const node = $(id); if (node) node.textContent = String(value); };
   const DISPLAY_TIME_ZONE = "Africa/Gaborone";
+  let serverClockOffsetMs = null;
+  let clockSyncStatus = "WAITING FOR SERVER";
+  let clockTimerStarted = false;
+
+  function ensureClockPanel() {
+    if ($("gomez-live-clock")) return;
+    const anchor = document.querySelector("#view-overview .flight-warning");
+    if (!anchor) return;
+    const panel = document.createElement("section");
+    panel.id = "gomez-live-clock";
+    panel.className = "gomez-live-clock";
+    panel.setAttribute("aria-label", "Live Botswana date and time");
+    panel.innerHTML = `
+      <div class="gomez-clock-main">
+        <span class="gomez-clock-label">BOTSWANA LIVE CLOCK</span>
+        <strong id="gomez-clock-time">Syncing…</strong>
+        <small id="gomez-clock-date">Waiting for server time</small>
+      </div>
+      <div class="gomez-clock-meta">
+        <span>TIME AUTHORITY</span>
+        <b id="gomez-clock-sync">WAITING FOR SERVER</b>
+        <small> Africa/Gaborone · CAT · UTC+2</small>
+      </div>`;
+    anchor.parentNode.insertBefore(panel, anchor);
+    const style = document.createElement("style");
+    style.textContent = `
+      .gomez-live-clock{display:flex;justify-content:space-between;align-items:center;gap:18px;margin:0 0 17px;padding:18px 21px;border:1px solid #285238;border-radius:15px;background:linear-gradient(110deg,#102318,#0b120e 70%);box-shadow:0 12px 35px #0003}
+      .gomez-clock-main,.gomez-clock-meta{display:grid;gap:5px}
+      .gomez-clock-label,.gomez-clock-meta>span{font-size:9px;font-weight:700;letter-spacing:1.6px;color:#82a98d}
+      #gomez-clock-time{font:700 clamp(27px,4vw,38px)/1.15 "Space Grotesk",sans-serif;letter-spacing:-1px;color:#f2fff5;font-variant-numeric:tabular-nums}
+      #gomez-clock-date,.gomez-clock-meta small{font-size:10px;color:#91a196}
+      #gomez-clock-sync{font-size:11px;letter-spacing:.7px;color:#e4c76f}
+      .gomez-clock-meta{padding-left:18px;border-left:1px solid #2b4432;min-width:190px}
+      @media(max-width:600px){.gomez-live-clock{align-items:flex-start;flex-direction:column;padding:15px}.gomez-clock-meta{padding:10px 0 0;border-left:0;border-top:1px solid #2b4432;width:100%;min-width:0}}
+    `;
+    document.head.appendChild(style);
+  }
+
+  function renderClock() {
+    if (serverClockOffsetMs === null) {
+      set("gomez-clock-time", "Not synchronized");
+      set("gomez-clock-date", "Waiting for collector server time");
+      set("gomez-clock-sync", clockSyncStatus);
+      return;
+    }
+    const now = new Date(Date.now() + serverClockOffsetMs);
+    set("gomez-clock-time", new Intl.DateTimeFormat("en-GB", {
+      timeZone: DISPLAY_TIME_ZONE, hour: "2-digit", minute: "2-digit", second: "2-digit", hourCycle: "h23"
+    }).format(now) + " CAT");
+    set("gomez-clock-date", new Intl.DateTimeFormat("en-GB", {
+      timeZone: DISPLAY_TIME_ZONE, weekday: "long", day: "2-digit", month: "long", year: "numeric"
+    }).format(now));
+    set("gomez-clock-sync", clockSyncStatus);
+  }
+
+  async function synchronizeClock() {
+    const startedAt = Date.now();
+    try {
+      const response = await get("/api/v1/time");
+      const receivedAt = Date.now();
+      const serverMs = Date.parse(response.serverTime);
+      if (!Number.isFinite(serverMs) || response.timezone !== DISPLAY_TIME_ZONE) {
+        throw new Error("Collector returned invalid clock metadata.");
+      }
+      const midpoint = startedAt + (receivedAt - startedAt) / 2;
+      serverClockOffsetMs = serverMs - midpoint;
+      clockSyncStatus = "SERVER SYNCED";
+      renderClock();
+    } catch (error) {
+      clockSyncStatus = "SERVER TIME UNAVAILABLE";
+      renderClock();
+      console.warn("Could not synchronize live clock:", error.message);
+    }
+  }
+
+  function startLiveClock() {
+    ensureClockPanel();
+    if (clockTimerStarted) return;
+    clockTimerStarted = true;
+    synchronizeClock();
+    window.setInterval(renderClock, 1000);
+    window.setInterval(synchronizeClock, 30000);
+  }
+
+  function ensurePredictionCutoffFields() {
+    const host = $("next-flight-evidence");
+    if (!host || $("next-flight-cutoff")) return;
+    const cutoff = document.createElement("p");
+    cutoff.id = "next-flight-cutoff";
+    cutoff.className = "panel-copy";
+    cutoff.textContent = "Data cutoff: waiting for estimate";
+    const round = document.createElement("p");
+    round.id = "next-flight-cutoff-round";
+    round.className = "panel-copy";
+    round.textContent = "Last eligible round: waiting for estimate";
+    host.insertAdjacentElement("afterend", cutoff);
+    cutoff.insertAdjacentElement("afterend", round);
+  }
+
   const formatTime = (value) => {
     if (!value) return "Not available";
     const date = new Date(value);
@@ -115,12 +214,20 @@
             (100 * estimate.mostLikelyProbability).toFixed(1) + "% smoothed frequency · Freshness: " +
             estimate.dataFreshnessSeconds + " seconds. This is not a reliable next-flight forecast."
           : (estimate.reason || "Prediction endpoint unavailable."));
+        set("next-flight-cutoff", estimate.dataCutoffEndedAt
+          ? "Data cutoff: " + formatTime(estimate.dataCutoffEndedAt)
+          : "Data cutoff: unavailable");
+        set("next-flight-cutoff-round", estimate.dataCutoffRoundId
+          ? "Last eligible round ID: " + estimate.dataCutoffRoundId
+          : "Last eligible round: unavailable");
       } catch (predictionError) {
         set("next-flight-range", "—");
         set("next-flight-status", "Prediction service not connected");
         set("next-flight-message", "The collector has not been updated with the time-aware prediction endpoint yet.");
         set("next-flight-asof", "No estimate recorded");
         set("next-flight-evidence", "Historical observations only; no next-flight estimate was saved.");
+        set("next-flight-cutoff", "Data cutoff: unavailable");
+        set("next-flight-cutoff-round", "Last eligible round: unavailable");
       }
       if (rows.length && window.GomezPreview && typeof window.GomezPreview.loadRemoteObservations === "function") {
         try { window.GomezPreview.loadRemoteObservations(rows, "GameData365 Aviator API"); }
@@ -211,6 +318,8 @@
   }
 
   document.addEventListener("DOMContentLoaded", () => {
+    startLiveClock();
+    ensurePredictionCutoffFields();
     $("refresh-live-data")?.addEventListener("click", refresh);
     $("save-manual-observation")?.addEventListener("click", recordManualObservation);
     refreshManualObservations();
