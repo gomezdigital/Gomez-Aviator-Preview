@@ -4,10 +4,22 @@
   const API = "https://gomez-aviator-collector.onrender.com";
   const $ = (id) => document.getElementById(id);
   const set = (id, value) => { const node = $(id); if (node) node.textContent = String(value); };
+  const DISPLAY_TIME_ZONE = "Africa/Gaborone";
   const formatTime = (value) => {
     if (!value) return "Not available";
     const date = new Date(value);
-    return Number.isNaN(date.getTime()) ? "Not available" : date.toLocaleString();
+    if (Number.isNaN(date.getTime())) return "Not available";
+    const formatted = new Intl.DateTimeFormat("en-GB", {
+      timeZone: DISPLAY_TIME_ZONE,
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+      hourCycle: "h23"
+    }).format(date);
+    return formatted + " CAT";
   };
   async function get(path) {
     const response = await fetch(API + path, {
