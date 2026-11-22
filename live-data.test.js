@@ -101,7 +101,7 @@ test("live-data reader loads stored GameData365 records into the Data Lab", asyn
   listeners.get("DOMContentLoaded")();
   await new Promise((resolve) => setTimeout(resolve, 0));
 
-  assert.equal(requested.length, 8);
+  assert.equal(requested.length, 9);
   assert.ok(requested.includes("/health"));
   assert.ok(requested.includes("/api/v1/time"));
   assert.ok(requested.includes("/api/v1/sources"));
