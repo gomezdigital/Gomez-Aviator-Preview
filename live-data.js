@@ -5,8 +5,8 @@
   const $ = (id) => document.getElementById(id);
   const set = (id, value) => { const node = $(id); if (node) node.textContent = String(value); };
   const DISPLAY_TIME_ZONE = "Africa/Gaborone";
-  let serverClockOffsetMs = null;
-  let clockSyncStatus = "WAITING FOR SERVER";
+  let serverClockOffsetMs = 0;
+  let clockSyncStatus = "DEVICE CLOCK · NOT VERIFIED";
   let clockTimerStarted = false;
 
   function ensureClockPanel() {
@@ -44,12 +44,6 @@
   }
 
   function renderClock() {
-    if (serverClockOffsetMs === null) {
-      set("gomez-clock-time", "Not synchronized");
-      set("gomez-clock-date", "Waiting for collector server time");
-      set("gomez-clock-sync", clockSyncStatus);
-      return;
-    }
     const now = new Date(Date.now() + serverClockOffsetMs);
     set("gomez-clock-time", new Intl.DateTimeFormat("en-GB", {
       timeZone: DISPLAY_TIME_ZONE, hour: "2-digit", minute: "2-digit", second: "2-digit", hourCycle: "h23"
@@ -74,7 +68,8 @@
       clockSyncStatus = "SERVER SYNCED";
       renderClock();
     } catch (error) {
-      clockSyncStatus = "SERVER TIME UNAVAILABLE";
+      if (serverClockOffsetMs === null) serverClockOffsetMs = 0;
+      clockSyncStatus = "DEVICE CLOCK · NOT VERIFIED";
       renderClock();
       console.warn("Could not synchronize live clock:", error.message);
     }
