@@ -126,11 +126,6 @@ function runProfile(rows) {
 
 function spacingProfile(rows) {
   const events = rows.filter((row) => row.multiplier >= 10);
-  const gaps = [];
-  for (let index = 1; index < events.length; index += 1) {
-    gaps.push(events[index].roundId && events[index - 1].roundId
-      ? null : null);
-  }
   const positions = events.map((event) => rows.indexOf(event));
   const intervals = positions.slice(1).map((position, index) => position - positions[index]);
   const sorted = [...intervals].sort((a, b) => a - b);
