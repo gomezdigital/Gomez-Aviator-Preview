@@ -1,9 +1,10 @@
 import http from "node:http";
 import { analyzeRounds } from "./analytics/engine.js";
+import { buildNextFlightEstimate } from "./analytics/next-flight.js";
 import { analyzeIntelligence } from "./analytics/intelligence.js";
 import { assessDataQuality } from "./analytics/quality.js";
 import { buildAgentReport } from "./analytics/agents.js";
-import { readAllRecords, persistUniqueRecords, checkStorage, storageMode, persistentStorage } from "./storage.js";
+import { readAllRecords, persistUniqueRecords, persistPrediction, resolvePendingPredictions, checkStorage, storageMode, persistentStorage } from "./storage.js";
 
 const PORT = Number(process.env.PORT || 8080);
 const INGEST_TOKEN = process.env.INGEST_API_TOKEN || "";
@@ -217,6 +218,43 @@ const server = http.createServer(async (req, res) => {
       });
     }
 
+    if (req.method === "GET" && url.pathname === "/api/v1/prediction/next") {
+      const game = (url.searchParams.get("game") || "aviator").trim().toLowerCase();
+      const source = (url.searchParams.get("source") || "gamedata365").trim().toLowerCase();
+      if (game !== "aviator") return json(res, 400, { error: "Next-flight research currently supports Aviator only." });
+      if (!persistentStorage) return json(res, 503, {
+        status: "unavailable", reason: "PERSISTENT_STORAGE_REQUIRED",
+        message: "The prediction ledger requires persistent Supabase storage."
+      });
+      const records = await readAllRecords();
+      const filtered = records
+        .filter((r) => r.game === game && (!source || r.source === source))
+        .sort((a, b) => Date.parse(a.endedAt) - Date.parse(b.endedAt));
+      const asOfAt = new Date().toISOString();
+      const estimate = buildNextFlightEstimate(filtered, { asOfAt, maxFreshnessSeconds: 120, minSample: 30, maxSample: 200 });
+      if (estimate.status !== "estimate_available") {
+        return json(res, 200, { prediction: estimate, saved: false });
+      }
+      const saved = await persistPrediction({
+        game,
+        source,
+        as_of_at: estimate.asOfAt,
+        display_timezone: "Africa/Gaborone",
+        data_cutoff_round_id: estimate.dataCutoffRoundId,
+        data_cutoff_ended_at: estimate.dataCutoffEndedAt,
+        data_freshness_seconds: estimate.dataFreshnessSeconds,
+        sample_size: estimate.sampleSize,
+        model_version: estimate.modelVersion,
+        prediction: estimate,
+        status: "pending"
+      });
+      return json(res, 200, {
+        prediction: { ...estimate, id: saved?.id || null },
+        saved: Boolean(saved),
+        note: "This estimate targets the first subsequent round observed by the connected data source, which may not be the actual next game flight if intervening rounds were missed."
+      });
+    }
+
     if (req.method === "GET" && url.pathname === "/api/v1/rounds") {
       const limitParam = Number(url.searchParams.get("limit") || 100);
       const limit = Number.isInteger(limitParam) ? Math.min(Math.max(limitParam, 1), MAX_RETURNED_ROUNDS) : 100;
@@ -260,10 +298,15 @@ const server = http.createServer(async (req, res) => {
       if (errors.length) return json(res, 400, { error: "One or more records failed validation.", details: errors });
 
       const persisted = await persistUniqueRecords(source, normalized);
+      const resolutionResults = [];
+      for (const round of [...normalized].sort((a, b) => Date.parse(a.endedAt) - Date.parse(b.endedAt))) {
+        resolutionResults.push(await resolvePendingPredictions(round));
+      }
       return json(res, 201, {
         source,
         accepted: persisted.accepted,
         duplicates: persisted.duplicates,
+        predictionsResolved: resolutionResults.reduce((sum, item) => sum + item.resolved, 0),
         rejected: 0,
         note: "Accepted records are stored as supplied; ingestion does not verify the source or prove a live feed.",
         liveFeedVerified: false
