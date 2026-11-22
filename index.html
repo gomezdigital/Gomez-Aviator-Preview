@@ -167,6 +167,19 @@
           <div class="message" id="live-data-message" role="status">Checking collector and stored records…</div>
           <div class="notice source-notice"><span>!</span><p>Stored historical observations are not a live video/game feed. Provider timestamps and data freshness are shown; no prediction of the next round is offered.</p></div>
         </article>
+        <article class="panel source-card manual-capture-card">
+          <div class="panel-title"><div><span class="overline">MANUAL OBSERVATION</span><h2>Round Capture Lab</h2></div><span class="tag tag-muted">USER RECORDED</span></div>
+          <p class="panel-copy">Record a multiplier you personally observe. The collector timestamps it automatically in UTC; the dashboard displays Botswana time (CAT). This is not an automatic game connection and cannot guarantee that every intervening flight is captured.</p>
+          <label for="manual-capture-token">Private capture access token</label>
+          <input id="manual-capture-token" type="password" autocomplete="off" placeholder="Enter your private capture token">
+          <label for="manual-multiplier">Observed multiplier (x)</label>
+          <input id="manual-multiplier" type="number" min="1" max="100000000" step="0.01" inputmode="decimal" placeholder="e.g. 1.75">
+          <button class="btn btn-green" id="save-manual-observation" type="button">Record observed round</button>
+          <div class="message" id="manual-capture-status" role="status">Waiting for an observation. The access token is used only in this page session and is not saved to browser storage.</div>
+          <div class="health-row"><span>Manually recorded rounds</span><b id="manual-round-count">—</b></div>
+          <div class="health-row"><span>Latest manual observation</span><b id="manual-latest-round">—</b></div>
+          <div class="live-round-list" id="manual-round-list" aria-live="polite"></div>
+        </article>
         <article class="panel live-analysis-card">
           <div class="panel-title"><div><span class="overline">REAL OBSERVATIONS</span><h2>Recorded-data analysis</h2></div><span class="tag tag-muted" id="live-analysis-status">NO DATA</span></div>
           <div class="health-row"><span>Sample size</span><b id="live-analysis-count">0</b></div>
