@@ -45,3 +45,12 @@ test("preview loads the public live-data reader without embedding provider secre
   assert.ok(!liveScript.includes("GAMEDATA365_API_KEY"));
   assert.ok(!liveScript.includes("SUPABASE_SERVICE_ROLE_KEY"));
 });
+
+
+test("remote provider data can be loaded into the Data Lab without embedding credentials", () => {
+  const script = fs.readFileSync(path.join(__dirname, "v2-preview.js"), "utf8");
+  assert.ok(script.includes("loadRemoteObservations"));
+  assert.ok(script.includes("provider-reported; not independently verified"));
+  assert.ok(!script.includes("GAMEDATA365_API_KEY"));
+  assert.ok(!script.includes("SUPABASE_SERVICE_ROLE_KEY"));
+});
