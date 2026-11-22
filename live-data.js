@@ -11,34 +11,32 @@
 
   function ensureClockPanel() {
     if ($("gomez-live-clock")) return;
-    const anchor = document.querySelector("#view-overview .flight-warning");
-    if (!anchor) return;
-    const panel = document.createElement("section");
+    const actions = document.querySelector(".topbar .top-actions");
+    if (!actions) return;
+    const panel = document.createElement("div");
     panel.id = "gomez-live-clock";
     panel.className = "gomez-live-clock";
     panel.setAttribute("aria-label", "Live Botswana date and time");
     panel.innerHTML = `
       <div class="gomez-clock-main">
-        <span class="gomez-clock-label">BOTSWANA LIVE CLOCK</span>
         <strong id="gomez-clock-time">Syncing…</strong>
         <small id="gomez-clock-date">Waiting for server time</small>
       </div>
       <div class="gomez-clock-meta">
-        <span>TIME AUTHORITY</span>
         <b id="gomez-clock-sync">WAITING FOR SERVER</b>
-        <small> Africa/Gaborone · CAT · UTC+2</small>
+        <small>Africa/Gaborone · CAT · UTC+2</small>
       </div>`;
-    anchor.parentNode.insertBefore(panel, anchor);
+    actions.parentNode.insertBefore(panel, actions);
     const style = document.createElement("style");
     style.textContent = `
-      .gomez-live-clock{display:flex;justify-content:space-between;align-items:center;gap:18px;margin:0 0 17px;padding:18px 21px;border:1px solid #285238;border-radius:15px;background:linear-gradient(110deg,#102318,#0b120e 70%);box-shadow:0 12px 35px #0003}
-      .gomez-clock-main,.gomez-clock-meta{display:grid;gap:5px}
-      .gomez-clock-label,.gomez-clock-meta>span{font-size:9px;font-weight:700;letter-spacing:1.6px;color:#82a98d}
-      #gomez-clock-time{font:700 clamp(27px,4vw,38px)/1.15 "Space Grotesk",sans-serif;letter-spacing:-1px;color:#f2fff5;font-variant-numeric:tabular-nums}
-      #gomez-clock-date,.gomez-clock-meta small{font-size:10px;color:#91a196}
-      #gomez-clock-sync{font-size:11px;letter-spacing:.7px;color:#e4c76f}
-      .gomez-clock-meta{padding-left:18px;border-left:1px solid #2b4432;min-width:190px}
-      @media(max-width:600px){.gomez-live-clock{align-items:flex-start;flex-direction:column;padding:15px}.gomez-clock-meta{padding:10px 0 0;border-left:0;border-top:1px solid #2b4432;width:100%;min-width:0}}
+      .gomez-live-clock{display:flex;align-items:center;gap:12px;margin-left:auto;margin-right:14px;padding:7px 11px;border:1px solid #285238;border-radius:10px;background:#0e1b12;white-space:nowrap}
+      .gomez-clock-main,.gomez-clock-meta{display:grid;gap:2px}
+      #gomez-clock-time{font:700 16px/1.15 "Space Grotesk",sans-serif;letter-spacing:.2px;color:#f2fff5;font-variant-numeric:tabular-nums}
+      #gomez-clock-date,.gomez-clock-meta small{font-size:8px;color:#91a196}
+      #gomez-clock-sync{font-size:9px;letter-spacing:.5px;color:#9be7ad}
+      .gomez-clock-meta{padding-left:11px;border-left:1px solid #2b4432}
+      @media(max-width:900px){.gomez-clock-meta{display:none}.gomez-live-clock{margin-right:8px;padding:6px 8px}}
+      @media(max-width:700px){.gomez-live-clock{gap:0;margin-left:auto;margin-right:7px;padding:5px 7px}#gomez-clock-time{font-size:13px}#gomez-clock-date{font-size:7px}.topbar{gap:7px}}
     `;
     document.head.appendChild(style);
   }
