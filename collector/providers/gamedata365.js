@@ -29,7 +29,7 @@ function normalizeRound(round, game = "aviator") {
 }
 async function requestJson(path, apiKey, fetchImpl) {
   const response = await fetchImpl(API_BASE + path, {
-    method: "GET", headers: { "X-API-Key": apiKey, accept: "application/json" }, signal: AbortSignal.timeout(15000)
+    method: "GET", headers: { "X-API-Key": apiKey, accept: "application/json" }, signal: AbortSignal.timeout(60000)
   });
   if (!response.ok) {
     const error = new Error(`GameData365 returned HTTP ${response.status}.`);
