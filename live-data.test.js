@@ -18,7 +18,9 @@ function makeNode() {
     replaceChildren() { this.children = []; },
     append(...nodes) { this.children.push(...nodes); },
     appendChild(node) { this.children.push(node); },
-    addEventListener() {}
+    addEventListener() {},
+    setAttribute() {},
+    insertAdjacentElement() {}
   };
 }
 
@@ -33,6 +35,7 @@ test("live-data reader loads stored GameData365 records into the Data Lab", asyn
   ];
   const payloads = {
     "/health": { ok: true, storageMode: "supabase", storage: { ok: true, persistent: true } },
+    "/api/v1/time": { serverTime: "2026-11-22T10:00:00.000Z", timezone: "Africa/Gaborone", timezoneLabel: "CAT", source: "collector-server" },
     "/api/v1/sources": { sources: [{ source: "gamedata365", records: 50, lastRoundAt: "2026-11-22T09:02:00.000Z", allowedForIngestion: true }] },
     "/api/v1/rounds?game=aviator&source=gamedata365&limit=500": { rounds, count: 2 },
     "/api/v1/analysis?game=aviator&source=gamedata365&limit=500": {
@@ -59,9 +62,12 @@ test("live-data reader loads stored GameData365 records into the Data Lab", asyn
       return nodes.get(id);
     },
     createElement() { return makeNode(); },
+    querySelector() { return null; },
+    head: { appendChild() {} },
     addEventListener(name, callback) { listeners.set(name, callback); }
   };
   const window = {
+    setInterval() { return 1; },
     GomezPreview: {
       loadRemoteObservations(rows, label) {
         imported = { rows, label };
@@ -95,8 +101,9 @@ test("live-data reader loads stored GameData365 records into the Data Lab", asyn
   listeners.get("DOMContentLoaded")();
   await new Promise((resolve) => setTimeout(resolve, 0));
 
-  assert.equal(requested.length, 7);
+  assert.equal(requested.length, 8);
   assert.ok(requested.includes("/health"));
+  assert.ok(requested.includes("/api/v1/time"));
   assert.ok(requested.includes("/api/v1/sources"));
   assert.ok(requested.includes("/api/v1/rounds?game=aviator&source=gamedata365&limit=500"));
   assert.ok(requested.includes("/api/v1/analysis?game=aviator&source=gamedata365&limit=500"));
