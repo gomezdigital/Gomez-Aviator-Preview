@@ -13,6 +13,7 @@
   <script src="research-core.js" defer></script>
   <script src="v2-preview.js" defer></script>
   <script src="live-data.js" defer></script>
+  <script src="intelligence-monitor.js" defer></script>
 </head>
 <body>
   <div class="app">
@@ -46,6 +47,35 @@
           <div class="flight-top-controls"><label for="platform-select">PLATFORM</label><select id="platform-select"><option>Demo environment</option><option>Historical CSV</option></select><span class="demo-pill"><i></i> DEMO MODE</span></div>
         </div>
         <div class="flight-warning"><b>RESEARCH PREVIEW</b><span>Sample multipliers below are illustrative demo values—not live results or predictions.</span></div>
+
+        <section class="gomez-monitor panel" id="gomez-intelligence-monitor" aria-label="Live intelligence monitor">
+          <div class="gomez-monitor-heading">
+            <div><span class="overline">GOMEZ AVIATOR INTELLIGENCE</span><h2>Live intelligence control centre</h2><p>Automatically refreshed research from stored, authorized observations. This is not a live game feed.</p></div>
+            <div class="gomez-monitor-actions"><span class="tag tag-green" id="gomez-monitor-status">CONNECTING</span><button class="btn btn-quiet" id="gomez-monitor-refresh" type="button">Refresh monitor</button></div>
+          </div>
+          <div class="gomez-monitor-grid">
+            <div class="gomez-monitor-tile"><small>Botswana server time</small><b id="gomez-monitor-clock">Syncing…</b></div>
+            <div class="gomez-monitor-tile"><small>Data storage</small><b id="gomez-monitor-storage">Checking…</b></div>
+            <div class="gomez-monitor-tile"><small>Provider access</small><b id="gomez-monitor-source">Checking…</b></div>
+            <div class="gomez-monitor-tile"><small>Stored observations</small><b id="gomez-monitor-count">—</b></div>
+            <div class="gomez-monitor-tile"><small>Latest stored result</small><b id="gomez-monitor-latest">Waiting…</b></div>
+            <div class="gomez-monitor-tile"><small>Observation age</small><b id="gomez-monitor-age">—</b><small id="gomez-monitor-freshness">Checking freshness</small></div>
+          </div>
+          <div class="gomez-monitor-columns">
+            <div><div class="panel-title"><div><span class="overline">PATTERN INTELLIGENCE</span><h3>Historical distribution</h3></div><span class="tag tag-muted" id="gomez-pattern-status">WAITING</span></div>
+              <div class="gomez-pattern-distribution" id="gomez-pattern-distribution">Waiting for pattern analysis…</div>
+              <div class="gomez-pattern-note"><small>Largest recent distribution shift</small><b id="gomez-pattern-shift">Waiting for analysis</b></div>
+            </div>
+            <div><div class="panel-title"><div><span class="overline">SEQUENCE RESEARCH</span><h3>Observed behaviour</h3></div></div>
+              <div class="gomez-pattern-note"><small>Longest consecutive category run</small><b id="gomez-pattern-run">Waiting for analysis</b></div>
+              <div class="gomez-pattern-note"><small>10x+ observation spacing</small><b id="gomez-pattern-spacing">Waiting for analysis</b></div>
+              <div class="gomez-pattern-note"><small>Recent stored rounds</small><div class="gomez-monitor-rounds" id="gomez-monitor-rounds">Waiting for observations…</div></div>
+            </div>
+          </div>
+          <p class="gomez-monitor-disclaimer" id="gomez-pattern-summary">Pattern findings are retrospective descriptions. They do not establish that future multipliers can be predicted.</p>
+          <small class="gomez-monitor-updated" id="gomez-monitor-updated">Waiting for first refresh…</small>
+        </section>
+
         <div class="flight-layout">
           <article class="flight-main panel">
             <div class="flight-panel-head"><div><span class="overline">FLIGHT DISPLAY</span><h2>Multiplier monitor</h2></div><span class="tag tag-green">SIMULATION</span></div>
