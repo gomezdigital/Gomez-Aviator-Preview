@@ -74,13 +74,18 @@
     busy = true;
     set("gomez-monitor-status", "SYNCING");
     try {
-      const [health, sourceData, roundData, patternData, timeData] = await Promise.all([
+      const [health, sourceData, roundData, timeData] = await Promise.all([
         get("/health"),
         get("/api/v1/sources"),
         get("/api/v1/rounds?game=aviator&source=gamedata365&limit=500"),
-        get("/api/v1/patterns?game=aviator&source=gamedata365&recentSize=20&baselineSize=50"),
         get("/api/v1/time")
       ]);
+      let patternData = null;
+      try {
+        patternData = await get("/api/v1/patterns?game=aviator&source=gamedata365&recentSize=20&baselineSize=50");
+      } catch (patternError) {
+        console.warn("Pattern endpoint is not available yet:", patternError.message);
+      }
       const source = (sourceData.sources || []).find((item) => item.source === "gamedata365");
       const rounds = Array.isArray(roundData.rounds) ? roundData.rounds : [];
       const latest = rounds[0] || null;
@@ -94,7 +99,7 @@
       set("gomez-monitor-age", age === null ? "No observation" : age + " seconds ago");
       set("gomez-monitor-freshness", age === null ? "NO DATA" : age <= 120 ? "RECENT OBSERVATION" : "HISTORICAL / STALE");
       set("gomez-monitor-updated", "Last dashboard refresh: " + fmtTime(timeData.serverTime));
-      renderPatterns(patternData.patterns);
+      renderPatterns(patternData?.patterns || null);
       const list = $("gomez-monitor-rounds");
       if (list) {
         list.replaceChildren();
