@@ -10,13 +10,13 @@ function rounds(values) {
 }
 
 test("pattern analysis exposes distribution, transitions, runs and high-multiplier spacing", () => {
-  const result = analyzePatterns(rounds([1.2, 1.5, 2.2, 1.8, 6, 11, 1.4, 10.5]), {
-    recentSize: 5, baselineSize: 3, minimumTransitionCount: 1
+  const result = analyzePatterns(rounds([1.2, 1.5, 2.2, 1.8, 6, 11, 1.4, 10.5, 1.3, 2.4, 1.6, 5.5, 12, 1.7, 3.1]), {
+    recentSize: 5, baselineSize: 10, minimumTransitionCount: 1
   });
-  assert.equal(result.sampleSize, 8);
+  assert.equal(result.sampleSize, 15);
   assert.equal(result.status, "ANALYSIS_AVAILABLE");
   assert.equal(result.predictive, false);
-  assert.equal(result.overallDistribution.reduce((sum, item) => sum + item.count, 0), 8);
+  assert.equal(result.overallDistribution.reduce((sum, item) => sum + item.count, 0), 15);
   assert.equal(result.transitions.length, 4);
   assert.equal(result.runs.find((item) => item.bucket === "below2x").longestRun, 2);
   assert.deepEqual(result.highMultiplierSpacing.intervalsInObservedRounds, [2, 2]);
@@ -27,8 +27,8 @@ test("transition rates are conditional on the observed previous category", () =>
     recentSize: 5, baselineSize: 2, minimumTransitionCount: 1
   });
   const low = result.transitions.find((item) => item.from === "below2x");
-  assert.equal(low.totalTransitions, 5);
-  assert.equal(low.outcomes.reduce((sum, item) => sum + item.count, 0), 5);
+  assert.equal(low.totalTransitions, 4);
+  assert.equal(low.outcomes.reduce((sum, item) => sum + item.count, 0), 4);
   assert.ok(low.outcomes.every((item) => item.rate === null || (item.rate >= 0 && item.rate <= 1)));
 });
 
