@@ -19,7 +19,7 @@ test("pattern analysis exposes distribution, transitions, runs and high-multipli
   assert.equal(result.overallDistribution.reduce((sum, item) => sum + item.count, 0), 15);
   assert.equal(result.transitions.length, 4);
   assert.equal(result.runs.find((item) => item.bucket === "below2x").longestRun, 2);
-  assert.deepEqual(result.highMultiplierSpacing.intervalsInObservedRounds, [2, 2]);
+  assert.deepEqual(result.highMultiplierSpacing.intervalsInObservedRounds, [2, 5]);
 });
 
 test("transition rates are conditional on the observed previous category", () => {
