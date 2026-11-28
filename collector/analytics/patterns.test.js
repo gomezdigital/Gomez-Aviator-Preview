@@ -20,6 +20,13 @@ test("pattern analysis exposes distribution, transitions, runs and high-multipli
   assert.equal(result.transitions.length, 4);
   assert.equal(result.runs.find((item) => item.bucket === "below2x").longestRun, 2);
   assert.deepEqual(result.highMultiplierSpacing.intervalsInObservedRounds, [2, 5]);
+  assert.equal(result.multiplierSummary.count, 15);
+  assert.equal(result.multiplierSummary.median, 2.2);
+  assert.equal(result.recentWindow.multiplierSummary.count, 5);
+  assert.ok(result.distributionChanges.every((item) =>
+    ["possible-distribution-difference-needs-validation", "no-clear-separation-in-these-samples"].includes(item.status)
+  ));
+  assert.match(result.dataCoverageWarning, /Missed provider rounds/);
 });
 
 test("transition rates are conditional on the observed previous category", () => {
