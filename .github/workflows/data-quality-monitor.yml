@@ -1,0 +1,62 @@
+name: Gomez Aviator Data Quality Monitor
+
+on:
+  push:
+    paths:
+      - .github/workflows/data-quality-monitor.yml
+  schedule:
+    - cron: "*/15 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: gomez-aviator-data-quality
+  cancel-in-progress: true
+
+jobs:
+  quality-check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Check collector data quality endpoint
+        env:
+          COLLECTOR_URL: https://gomez-aviator-collector.onrender.com
+        run: |
+          set -euo pipefail
+          curl --fail --silent --show-error --max-time 90 \
+            "$COLLECTOR_URL/api/v1/quality?game=aviator&source=gamedata365" \
+            -o quality.json
+
+          node --input-type=module <<'NODE'
+          import fs from "node:fs";
+
+          const payload = JSON.parse(fs.readFileSync("quality.json", "utf8"));
+          const report = payload.quality;
+
+          if (!report || !report.counts || !report.freshness) {
+            throw new Error("Collector returned an unexpected quality report.");
+          }
+
+          const summary = {
+            status: report.status,
+            freshness: report.freshness.status,
+            validRounds: report.counts.valid,
+            errors: report.counts.errors,
+            warnings: report.counts.warnings,
+            latestRoundAt: report.freshness.latestRoundAt,
+            ageMinutes: report.freshness.ageMinutes
+          };
+
+          console.log(JSON.stringify(summary, null, 2));
+
+          if (report.status === "ISSUES_FOUND" ||
+              report.freshness.status !== "FRESH" ||
+              report.counts.valid < 1 ||
+              report.counts.errors > 0) {
+            throw new Error("Data quality check failed. Review the collector quality report.");
+          }
+
+          console.log("Data quality check passed. Warnings, if any, are reported above.");
+          NODE
