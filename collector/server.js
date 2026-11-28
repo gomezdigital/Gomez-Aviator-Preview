@@ -412,6 +412,10 @@ const server = http.createServer(async (req, res) => {
       if (errors.length) return json(res, 400, { error: "One or more records failed validation.", details: errors });
 
       const persisted = await persistUniqueRecords(source, normalized);
+      const resolutionResults = [];
+      for (const round of [...normalized].sort((a, b) => Date.parse(a.endedAt) - Date.parse(b.endedAt))) {
+        resolutionResults.push(await resolvePendingPredictions(round));
+      }
       let postCrashCycle = { status: "not-triggered" };
       const isSingleLiveAviatorEvent = body?.eventType === "live-completed-round" &&
         source === "gamedata365" && normalized.length === 1 &&
@@ -422,10 +426,6 @@ const server = http.createServer(async (req, res) => {
         } else {
           postCrashCycle = await runPostCrashPrediction(source, "aviator");
         }
-      }
-      const resolutionResults = [];
-      for (const round of [...normalized].sort((a, b) => Date.parse(a.endedAt) - Date.parse(b.endedAt))) {
-        resolutionResults.push(await resolvePendingPredictions(round));
       }
       return json(res, 201, {
         source,
