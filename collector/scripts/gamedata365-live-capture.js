@@ -32,7 +32,8 @@ try {
     },
     body: JSON.stringify({
       source: "gamedata365",
-      rounds: aviator.map(({ game, roundId, multiplier, endedAt }) => ({ game, roundId, multiplier, endedAt }))
+      eventType: aviator.length === 1 && aviator[0].backfilled === false ? "live-completed-round" : "history-or-batch",
+      rounds: aviator.map(({ game, roundId, multiplier, endedAt, backfilled }) => ({ game, roundId, multiplier, endedAt, backfilled }))
     }),
     signal: AbortSignal.timeout(60000)
   });
@@ -46,7 +47,8 @@ try {
     observedRounds: aviator.map(({ roundId, multiplier, endedAt }) => ({ roundId, multiplier, endedAt })),
     accepted: body.accepted,
     duplicates: body.duplicates,
-    note: "This is a low-frequency latest-round poll, not a continuous stream. Rounds between polls may be missed."
+    postCrashCycle: body.postCrashCycle,
+    note: "This is a low-frequency latest-round poll, not a continuous stream. The five-second analysis delay begins after collector receipt; rounds between polls may be missed."
   }, null, 2));
 } catch (error) {
   console.error(JSON.stringify({
