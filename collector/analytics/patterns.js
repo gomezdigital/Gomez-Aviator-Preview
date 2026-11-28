@@ -61,6 +61,31 @@ function validRounds(input, game, source) {
     }));
 }
 
+function multiplierSummary(rows) {
+  const values = rows.map((row) => row.multiplier).sort((a, b) => a - b);
+  const quantile = (fraction) => {
+    if (!values.length) return null;
+    const position = (values.length - 1) * fraction;
+    const lower = Math.floor(position);
+    const upper = Math.ceil(position);
+    const value = values[lower] + (values[upper] - values[lower]) * (position - lower);
+    return Number(value.toFixed(2));
+  };
+  return {
+    count: values.length,
+    median: quantile(0.5),
+    percentile25: quantile(0.25),
+    percentile75: quantile(0.75),
+    minimum: values.length ? values[0] : null,
+    maximum: values.length ? values[values.length - 1] : null
+  };
+}
+
+function intervalsSeparated(a, b) {
+  if (a.lower === null || b.lower === null) return false;
+  return a.upper < b.lower || b.upper < a.lower;
+}
+
 function summarizeBuckets(rows) {
   const total = rows.length;
   return BUCKETS.map((bucket) => {
@@ -164,9 +189,16 @@ export function analyzePatterns(input, {
       bucket: recent.id, label: recent.label,
       recentCount: recent.count, recentRate: recent.rate,
       baselineCount: baseline.count, baselineRate: baseline.rate,
+      recentConfidenceInterval95: recent.confidenceInterval95,
+      baselineConfidenceInterval95: baseline.confidenceInterval95,
       percentagePointDifference: difference === null ? null : Number((difference * 100).toFixed(2)),
+      uncertaintyAssessment: difference === null ? "insufficient-sample"
+        : intervalsSeparated(recent.confidenceInterval95, baseline.confidenceInterval95)
+          ? "intervals-separated-descriptive-only" : "intervals-overlap-or-uncertain",
       status: difference === null ? "insufficient-baseline"
-        : Math.abs(difference) >= 0.15 ? "shift-observed" : "no-large-shift-observed"
+        : intervalsSeparated(recent.confidenceInterval95, baseline.confidenceInterval95)
+          ? "possible-distribution-difference-needs-validation"
+          : "no-clear-separation-in-these-samples"
     };
   });
   const transitions = transitionProfile(rows).map((item) => ({
@@ -187,8 +219,15 @@ export function analyzePatterns(input, {
     timeRange: rows.length ? { from: rows[0].endedAt, through: rows[rows.length - 1].endedAt } : null,
     bucketDefinitions: BUCKETS.map(({ id, label }) => ({ id, label })),
     overallDistribution: summarizeBuckets(rows),
-    recentWindow: { requestedSize: recentCount, actualSize: recentRows.length, distribution: recentBuckets },
-    baselineWindow: { requestedSize: baselineCount, actualSize: baselineRows.length, distribution: baselineBuckets },
+    multiplierSummary: multiplierSummary(rows),
+    recentWindow: {
+      requestedSize: recentCount, actualSize: recentRows.length,
+      multiplierSummary: multiplierSummary(recentRows), distribution: recentBuckets
+    },
+    baselineWindow: {
+      requestedSize: baselineCount, actualSize: baselineRows.length,
+      multiplierSummary: multiplierSummary(baselineRows), distribution: baselineBuckets
+    },
     distributionChanges,
     transitions,
     runs: runProfile(rows),
@@ -199,7 +238,8 @@ export function analyzePatterns(input, {
       recommendedMinimumForWindowComparison: minimumRows,
       minimumTransitionsForPerTransitionSummary: minTransitions
     },
-    interpretation: "Retrospective pattern research only. Frequencies and sequences are descriptive, not evidence that a future round is predictable.",
+    interpretation: "Retrospective pattern research only. Confidence intervals describe sampling uncertainty; separated intervals are a screening flag, not a formal significance test or evidence that a future round is predictable.",
+    dataCoverageWarning: "The analysis can only describe rounds present in storage. Missed provider rounds, gaps, or source changes can bias run lengths, transitions, and spacing.",
     predictive: false
   };
 }
