@@ -121,6 +121,46 @@ function normalizeRound(input, source) {
   };
 }
 
+function wait(milliseconds) {
+  return new Promise((resolve) => setTimeout(resolve, milliseconds));
+}
+
+async function runPostCrashPrediction(source, game) {
+  const receivedAt = new Date().toISOString();
+  await wait(5000);
+  if (!persistentStorage) {
+    return { status: "skipped", reason: "PERSISTENT_STORAGE_REQUIRED", receivedAt, delayMs: 5000 };
+  }
+  const records = await readAllRecords();
+  const relevant = records
+    .filter((row) => row.game === game && row.source === source)
+    .sort((a, b) => Date.parse(a.endedAt) - Date.parse(b.endedAt));
+  const asOfAt = new Date().toISOString();
+  const estimate = buildNextFlightEstimate(relevant, {
+    asOfAt, maxFreshnessSeconds: 120, minSample: 30, maxSample: 200
+  });
+  if (estimate.status !== "estimate_available") {
+    return { status: "unavailable", reason: estimate.reason, message: estimate.message, receivedAt, asOfAt, delayMs: 5000 };
+  }
+  const saved = await persistPrediction({
+    game, source, as_of_at: estimate.asOfAt, display_timezone: "Africa/Gaborone",
+    data_cutoff_round_id: estimate.dataCutoffRoundId,
+    data_cutoff_ended_at: estimate.dataCutoffEndedAt,
+    data_freshness_seconds: estimate.dataFreshnessSeconds,
+    sample_size: estimate.sampleSize, model_version: estimate.modelVersion,
+    prediction: estimate, status: "pending"
+  });
+  return {
+    status: saved ? "estimate_saved" : "estimate_not_saved",
+    predictionId: saved?.id || null,
+    estimate,
+    receivedAt,
+    asOfAt,
+    delayMs: 5000,
+    timingNote: "Five-second delay is measured from collector receipt of the completed-round event, not from the game crash timestamp."
+  };
+}
+
 function sourceHealth(records) {
   return SOURCES.map((source) => {
     const sourceRows = records.filter((r) => r.source === source);
@@ -372,6 +412,17 @@ const server = http.createServer(async (req, res) => {
       if (errors.length) return json(res, 400, { error: "One or more records failed validation.", details: errors });
 
       const persisted = await persistUniqueRecords(source, normalized);
+      let postCrashCycle = { status: "not-triggered" };
+      const isSingleLiveAviatorEvent = body?.eventType === "live-completed-round" &&
+        source === "gamedata365" && normalized.length === 1 &&
+        normalized[0].game === "aviator" && body.rounds[0]?.backfilled === false;
+      if (isSingleLiveAviatorEvent) {
+        if (persisted.accepted !== 1) {
+          postCrashCycle = { status: "skipped", reason: "DUPLICATE_OR_NOT_NEW" };
+        } else {
+          postCrashCycle = await runPostCrashPrediction(source, "aviator");
+        }
+      }
       const resolutionResults = [];
       for (const round of [...normalized].sort((a, b) => Date.parse(a.endedAt) - Date.parse(b.endedAt))) {
         resolutionResults.push(await resolvePendingPredictions(round));
@@ -382,7 +433,8 @@ const server = http.createServer(async (req, res) => {
         duplicates: persisted.duplicates,
         predictionsResolved: resolutionResults.reduce((sum, item) => sum + item.resolved, 0),
         rejected: 0,
-        note: "Accepted records are stored as supplied; ingestion does not verify the source or prove a live feed.",
+        postCrashCycle,
+        note: "The post-crash cycle runs only for a single newly accepted, non-backfilled Aviator event. Its five-second delay starts when the collector receives the event; source delivery latency is separate.",
         liveFeedVerified: false
       });
     }
