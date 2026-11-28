@@ -10,7 +10,10 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="v2-preview.css">
+  <script src="research-core.js" defer></script>
   <script src="v2-preview.js" defer></script>
+  <script src="live-data.js" defer></script>
+  <script src="intelligence-monitor.js" defer></script>
 </head>
 <body>
   <div class="app">
@@ -44,6 +47,35 @@
           <div class="flight-top-controls"><label for="platform-select">PLATFORM</label><select id="platform-select"><option>Demo environment</option><option>Historical CSV</option></select><span class="demo-pill"><i></i> DEMO MODE</span></div>
         </div>
         <div class="flight-warning"><b>RESEARCH PREVIEW</b><span>Sample multipliers below are illustrative demo values—not live results or predictions.</span></div>
+
+        <section class="gomez-monitor panel" id="gomez-intelligence-monitor" aria-label="Live intelligence monitor">
+          <div class="gomez-monitor-heading">
+            <div><span class="overline">GOMEZ AVIATOR INTELLIGENCE</span><h2>Live intelligence control centre</h2><p>Automatically refreshed research from stored, authorized observations. This is not a live game feed.</p></div>
+            <div class="gomez-monitor-actions"><span class="tag tag-green" id="gomez-monitor-status">CONNECTING</span><button class="btn btn-quiet" id="gomez-monitor-refresh" type="button">Refresh monitor</button></div>
+          </div>
+          <div class="gomez-monitor-grid">
+            <div class="gomez-monitor-tile"><small>Botswana server time</small><b id="gomez-monitor-clock">Syncing…</b></div>
+            <div class="gomez-monitor-tile"><small>Data storage</small><b id="gomez-monitor-storage">Checking…</b></div>
+            <div class="gomez-monitor-tile"><small>Provider access</small><b id="gomez-monitor-source">Checking…</b></div>
+            <div class="gomez-monitor-tile"><small>Stored observations</small><b id="gomez-monitor-count">—</b></div>
+            <div class="gomez-monitor-tile"><small>Latest stored result</small><b id="gomez-monitor-latest">Waiting…</b></div>
+            <div class="gomez-monitor-tile"><small>Observation age</small><b id="gomez-monitor-age">—</b><small id="gomez-monitor-freshness">Checking freshness</small></div>
+          </div>
+          <div class="gomez-monitor-columns">
+            <div><div class="panel-title"><div><span class="overline">PATTERN INTELLIGENCE</span><h3>Historical distribution</h3></div><span class="tag tag-muted" id="gomez-pattern-status">WAITING</span></div>
+              <div class="gomez-pattern-distribution" id="gomez-pattern-distribution">Waiting for pattern analysis…</div>
+              <div class="gomez-pattern-note"><small>Largest recent distribution shift</small><b id="gomez-pattern-shift">Waiting for analysis</b></div>
+            </div>
+            <div><div class="panel-title"><div><span class="overline">SEQUENCE RESEARCH</span><h3>Observed behaviour</h3></div></div>
+              <div class="gomez-pattern-note"><small>Longest consecutive category run</small><b id="gomez-pattern-run">Waiting for analysis</b></div>
+              <div class="gomez-pattern-note"><small>10x+ observation spacing</small><b id="gomez-pattern-spacing">Waiting for analysis</b></div>
+              <div class="gomez-pattern-note"><small>Recent stored rounds</small><div class="gomez-monitor-rounds" id="gomez-monitor-rounds">Waiting for observations…</div></div>
+            </div>
+          </div>
+          <p class="gomez-monitor-disclaimer" id="gomez-pattern-summary">Pattern findings are retrospective descriptions. They do not establish that future multipliers can be predicted.</p>
+          <small class="gomez-monitor-updated" id="gomez-monitor-updated">Waiting for first refresh…</small>
+        </section>
+
         <div class="flight-layout">
           <article class="flight-main panel">
             <div class="flight-panel-head"><div><span class="overline">FLIGHT DISPLAY</span><h2>Multiplier monitor</h2></div><span class="tag tag-green">SIMULATION</span></div>
@@ -52,7 +84,7 @@
             <div class="flight-actions"><button class="btn btn-green" id="run-flight-simulation">Run quick simulation <span>✦</span></button><button class="btn btn-quiet" id="go-data">Import historical data</button><button class="btn btn-quiet" id="reset-data">Refresh demo</button></div><div id="simulation-status" class="simulation-status" role="status">Ready · Quick simulation resamples this dataset; it does not predict a real flight.</div><button class="btn btn-quiet" id="analyze-next-flight">Analyze sample</button><div id="next-flight-result" class="simulation-status" role="status">Analyze to view historical threshold frequencies. Next flight remains unknown.</div>
           </article>
           <aside class="flight-side">
-            <article class="panel next-flight-card"><span class="overline">NEXT FLIGHT</span><div class="next-value">—<span>x</span></div><b>Unknown outcome</b><p>Aviator rounds are random. This preview cannot reliably predict the next crash point.</p><div class="next-status"><i></i> Prediction unavailable</div></article>
+            <article class="panel next-flight-card"><span class="overline">NEXT FLIGHT · RESEARCH ESTIMATE</span><div class="next-value" id="next-flight-range">—</div><b id="next-flight-status">Estimate unavailable</b><p id="next-flight-message">Waiting for a sufficiently fresh, verified sample. This panel will only estimate when the latest observation is fresh.</p><div class="next-status"><i></i> <span id="next-flight-asof">No estimate recorded</span></div><div class="panel-copy" id="next-flight-evidence">No prediction has been generated.</div></article>
             <article class="panel mini-stats"><div class="panel-title"><div><span class="overline">DATA SNAPSHOT</span><h2>Demo statistics</h2></div></div><div class="mini-stat"><span>Sample size</span><b id="metric-count">120</b></div><div class="mini-stat"><span>Sample median</span><b id="metric-median">1.84x</b></div><div class="mini-stat"><span>Rounds ≥ 5x</span><b id="metric-high">12.5%</b></div></article>
           </aside>
         </div>
@@ -78,12 +110,61 @@
         <div class="section-heading"><span class="overline">WORKSPACE / DATA LAB</span><h1>Data <span>Laboratory.</span></h1><p>Explore and validate historical or synthetic observations.</p></div>
         <article class="panel data-panel">
           <div class="panel-title"><div><span class="overline">DATA INPUT</span><h2>Import a CSV dataset</h2></div><span class="tag">LOCAL PROCESSING</span></div>
-          <p class="panel-copy">CSV should contain a column named <code>multiplier</code>. This preview processes the file in your browser. Do not upload passwords, account details, or private credentials.</p>
+          <p class="panel-copy">CSV should contain a column named <code>multiplier</code>. Optional columns: timestamp and round_id. Files are processed in this browser. Do not upload passwords, account details, or private credentials.</p>
           <label class="file-drop" for="csv-input"><span>↑</span><b>Choose CSV file</b><small>CSV format · multiplier column · max 2 MB</small></label>
           <input id="csv-input" type="file" accept=".csv,text/csv" hidden>
           <div id="data-message" class="message" role="status">Demo dataset loaded. Choose a CSV to replace it.</div>
           <div class="data-summary" id="data-summary"></div>
           <button class="btn btn-quiet" id="download-sample">Download sample CSV</button>
+          
+        </article>
+        <article class="panel">
+          <div class="panel-title"><div><span class="overline">DATA QUALITY</span><h2>Dataset audit</h2></div><span class="tag" id="quality-status">SYNTHETIC DEMO</span></div>
+          <div class="health-row"><span>Heuristic quality score</span><b id="quality-score">—</b></div><div class="data-summary" id="quality-grid"></div>
+          <p class="panel-copy" id="quality-warning">A quality score cannot authenticate a source or prove completeness.</p>
+        </article>
+        <article class="panel distribution-panel">
+          <div class="panel-title"><div><span class="overline">DISTRIBUTION</span><h2>Observed multiplier ranges</h2></div><span class="tag" id="distribution-source">DEMO DATA</span></div>
+          <div id="distribution-breakdown"></div><p class="panel-copy" id="distribution-warning">Observed sample frequencies only; not future probabilities.</p>
+        </article>
+        <article class="panel compare-panel">
+          <div class="panel-title"><div><span class="overline">WALK-FORWARD RESEARCH</span><h2>Baseline comparison</h2></div><span class="tag">HISTORICAL TEST</span></div>
+          <p class="panel-copy">Compare a simple historical baseline with a streak-conditioned estimate on later rows. This is retrospective evaluation, not next-flight prediction.</p>
+          <label for="core-threshold">Target threshold (x)</label><input id="core-threshold" type="number" min="1.01" step="0.01" value="2">
+          <label for="core-streak">Prior below-target streak length</label><input id="core-streak" type="number" min="1" max="100" step="1" value="3">
+          <button class="btn btn-green" id="run-core-analysis" type="button">Run walk-forward comparison</button>
+          <div class="message" id="core-analysis-result" role="status">Import historical data to run this evaluation.</div>
+        </article>
+        <article class="panel">
+          <div class="panel-title"><div><span class="overline">DATASET MANAGEMENT</span><h2>Saved summary snapshots</h2></div><span class="tag">LOCAL ONLY</span></div>
+          <p class="panel-copy">Only aggregate summaries are saved in this browser. Raw round-level observations are not stored by this feature.</p>
+          <label for="snapshot-label">Snapshot label</label><input id="snapshot-label" type="text" maxlength="80" placeholder="e.g. November sample">
+          <button class="btn btn-quiet" id="save-snapshot" type="button" disabled>Import a CSV to save</button>
+          <div class="health-row"><span>Saved summaries</span><b id="history-count">0 SAVED</b></div><div id="import-history"></div>
+          <label for="compare-first">Dataset A</label><select id="compare-first"></select><label for="compare-second">Dataset B</label><select id="compare-second"></select>
+          <button class="btn btn-quiet" id="run-dataset-compare" type="button">Compare snapshots</button>
+          <button class="btn btn-quiet" id="export-dataset-compare" type="button">Export comparison JSON</button>
+          <div class="message" id="dataset-comparison-result" role="status">Save at least two summaries to compare them.</div>
+        </article>
+        <article class="panel time-period-panel">
+          <div class="panel-title"><div><span class="overline">TIME-PERIOD ANALYSIS</span><h2>Historical grouping</h2></div><span class="tag" id="time-period-source">NOT RUN</span></div>
+          <label for="time-period-select">Group observations by</label><select id="time-period-select"><option value="day">UTC day</option><option value="week">UTC week</option><option value="month" selected>UTC month</option></select>
+          <button class="btn btn-quiet" id="run-time-period" type="button">Analyze time periods</button>
+          <div class="message" id="time-period-result" role="status">Import records with timestamps to enable grouping.</div><div id="time-period-table-wrap"></div><p class="panel-copy" id="time-period-warning"></p>
+        </article>
+        <article class="panel stability-panel">
+          <div class="panel-title"><div><span class="overline">ROLLING STABILITY</span><h2>Window analysis</h2></div><span class="tag" id="stability-source">NOT RUN</span></div>
+          <label for="stability-window">Window size</label><input id="stability-window" type="number" min="2" max="10000" value="100">
+          <label for="stability-step">Step size</label><input id="stability-step" type="number" min="1" max="10000" value="50">
+          <button class="btn btn-quiet" id="run-stability" type="button">Analyze rolling windows</button>
+          <div class="message" id="stability-result" role="status">Import historical observations to analyze rolling windows.</div><div id="stability-table-wrap"></div><p class="panel-copy" id="stability-warning"></p>
+        </article>
+        <article class="panel">
+          <div class="panel-title"><div><span class="overline">RESEARCH EXPORTS</span><h2>Export your report</h2></div><span class="tag">LOCAL GENERATION</span></div>
+          <p class="panel-copy">Reports contain descriptive statistics and limitations. The imported source remains unverified.</p>
+          <button class="btn btn-quiet" id="export-research-json" type="button">Export research JSON</button><button class="btn btn-quiet" id="export-research-html" type="button">Export readable HTML report</button>
+          <button class="btn btn-quiet" id="export-history" type="button">Export import metadata</button><button class="btn btn-quiet" id="clear-history" type="button">Clear local import history</button>
+          <div class="message" id="research-report-result" role="status">Import a CSV to generate a report.</div>
         </article>
       </section>
 
@@ -103,8 +184,43 @@
       </section>
 
       <section class="view" id="view-sources">
-        <div class="section-heading"><span class="overline">WORKSPACE / DATA SOURCES</span><h1>Source <span>Intelligence.</span></h1><p>Transparent source status and data provenance.</p></div>
-        <article class="panel source-card"><div class="panel-title"><div><span class="overline">SOURCE PRIORITY</span><h2>Betway Botswana</h2></div><span class="tag tag-muted">NOT CONNECTED</span></div><p class="panel-copy">Betway is a source we may investigate for lawful, authorized historical data access. No live feed is connected or verified.</p><div class="health-row"><span>Source verification</span><b class="pending">○ Pending</b></div><div class="health-row"><span>Collector API</span><b class="pending">○ Not configured</b></div><div class="health-row"><span>Last successful sync</span><b>—</b></div><div class="notice source-notice"><span>!</span><p>Use this project for research and simulation. It does not place bets or connect to betting accounts.</p></div></article>
+        <div class="section-heading"><span class="overline">WORKSPACE / DATA SOURCES</span><h1>Source <span>Intelligence.</span></h1><p>Live collector health, stored provider observations and retrospective analysis.</p></div>
+        <article class="panel source-card live-source-card">
+          <div class="panel-title"><div><span class="overline">PROVIDER CONNECTION</span><h2>GameData365 · Aviator</h2></div><span class="tag tag-muted" id="provider-status">CHECKING</span></div>
+          <p class="panel-copy">This workspace reads stored observations from the secured Gomez collector. The provider API key stays on the backend and is never sent to this page.</p>
+          <div class="health-row"><span>Collector API</span><b id="collector-status">Checking…</b></div>
+          <div class="health-row"><span>Persistent storage</span><b id="storage-status">Checking…</b></div>
+          <div class="health-row"><span>GameData365 records stored</span><b id="provider-record-count">—</b></div>
+          <div class="health-row"><span>Latest recorded round</span><b id="provider-latest-round">—</b></div>
+          <div class="health-row"><span>Ingestion permission</span><b id="provider-ingestion-status">—</b></div>
+          <button class="btn btn-green" id="refresh-live-data" type="button">Refresh stored data</button>
+          <div class="message" id="live-data-message" role="status">Checking collector and stored records…</div>
+          <div class="notice source-notice"><span>!</span><p>Stored historical observations are not a live video/game feed. Provider timestamps and data freshness are shown; no prediction of the next round is offered.</p></div>
+        </article>
+        <article class="panel source-card manual-capture-card">
+          <div class="panel-title"><div><span class="overline">MANUAL OBSERVATION</span><h2>Round Capture Lab</h2></div><span class="tag tag-muted">USER RECORDED</span></div>
+          <p class="panel-copy">Record a multiplier you personally observe. The collector timestamps it automatically in UTC; the dashboard displays Botswana time (CAT). This is not an automatic game connection and cannot guarantee that every intervening flight is captured.</p>
+          <label for="manual-capture-token">Private capture access token</label>
+          <input id="manual-capture-token" type="password" autocomplete="off" placeholder="Enter your private capture token">
+          <label for="manual-multiplier">Observed multiplier (x)</label>
+          <input id="manual-multiplier" type="number" min="1" max="100000000" step="0.01" inputmode="decimal" placeholder="e.g. 1.75">
+          <button class="btn btn-green" id="save-manual-observation" type="button">Record observed round</button>
+          <div class="message" id="manual-capture-status" role="status">Waiting for an observation. The access token is used only in this page session and is not saved to browser storage.</div>
+          <div class="health-row"><span>Manually recorded rounds</span><b id="manual-round-count">—</b></div>
+          <div class="health-row"><span>Latest manual observation</span><b id="manual-latest-round">—</b></div>
+          <div class="live-round-list" id="manual-round-list" aria-live="polite"></div>
+        </article>
+        <article class="panel live-analysis-card">
+          <div class="panel-title"><div><span class="overline">REAL OBSERVATIONS</span><h2>Recorded-data analysis</h2></div><span class="tag tag-muted" id="live-analysis-status">NO DATA</span></div>
+          <div class="health-row"><span>Sample size</span><b id="live-analysis-count">0</b></div>
+          <div class="health-row"><span>Observed mean</span><b id="live-analysis-mean">—</b></div>
+          <div class="health-row"><span>Observed median</span><b id="live-analysis-median">—</b></div>
+          <div class="health-row"><span>Rounds ≥ 2x</span><b id="live-analysis-2x">—</b></div>
+          <div class="health-row"><span>Rounds ≥ 5x</span><b id="live-analysis-5x">—</b></div>
+          <div class="health-row"><span>Data quality</span><b id="live-analysis-quality">—</b></div>
+          <div class="message" id="live-intelligence-output" role="status">No GameData365 observations have been loaded.</div>
+          <div class="live-round-list" id="live-round-list" aria-live="polite"></div>
+        </article>
       </section>
 
       <footer class="footer"><span>GOMEZ AVIATOR INTELLIGENCE</span><span>V2 PREVIEW · RESEARCH & SIMULATION ONLY</span></footer>

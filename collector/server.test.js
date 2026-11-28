@@ -45,7 +45,8 @@ before(async () => {
       PORT: String(port),
       DATA_FILE: path.join(tempDir, "rounds.jsonl"),
       INGEST_API_TOKEN: "test-only-secret",
-      ALLOWED_SOURCES: "",
+      MANUAL_CAPTURE_TOKEN: "manual-test-secret",
+      ALLOWED_SOURCES: "gamedata365",
       CORS_ORIGINS: "https://gomezdigital.github.io"
     },
     stdio: "ignore"
@@ -58,12 +59,29 @@ after(async () => {
   if (tempDir) await fs.rm(tempDir, { recursive: true, force: true });
 });
 
+test("time endpoint returns an authoritative UTC timestamp and Botswana timezone", async () => {
+  const beforeRequest = Date.now();
+  const response = await fetch(baseUrl + "/api/v1/time");
+  const afterResponse = Date.now();
+  const body = await response.json();
+  const serverTime = Date.parse(body.serverTime);
+  assert.equal(response.status, 200);
+  assert.equal(body.timezone, "Africa/Gaborone");
+  assert.equal(body.timezoneLabel, "CAT");
+  assert.equal(body.source, "collector-server");
+  assert.ok(Number.isFinite(serverTime));
+  assert.ok(serverTime >= beforeRequest - 5000 && serverTime <= afterResponse + 5000);
+});
+
 test("health endpoint reports service health but not a live feed", async () => {
   const response = await fetch(baseUrl + "/health");
   const body = await response.json();
   assert.equal(response.status, 200);
   assert.equal(body.ok, true);
   assert.equal(body.liveProviderConnected, false);
+  assert.equal(body.storageMode, "local-file");
+  assert.equal(body.persistentStorage, false);
+  assert.equal(body.storage.ok, true);
 });
 
 test("source endpoint marks sources as not verified", async () => {
@@ -109,6 +127,22 @@ test("intelligence endpoint reports insufficient data without claiming a live fe
   assert.equal(body.liveFeedVerified, false);
 });
 
+
+test("patterns endpoint reports insufficient historical data without claiming a live feed", async () => {
+  const response = await fetch(baseUrl + "/api/v1/patterns?game=aviator&source=gamedata365");
+  const body = await response.json();
+  assert.equal(response.status, 200);
+  assert.equal(body.patterns.status, "INSUFFICIENT_DATA");
+  assert.equal(body.patterns.sampleSize, 0);
+  assert.equal(body.patterns.predictive, false);
+  assert.equal(body.liveFeedVerified, false);
+});
+
+test("patterns endpoint rejects unsupported game filters", async () => {
+  const response = await fetch(baseUrl + "/api/v1/patterns?game=unknown");
+  assert.equal(response.status, 400);
+});
+
 test("analysis endpoint reports an empty historical sample before ingestion", async () => {
   const response = await fetch(baseUrl + "/api/v1/analysis?game=aviator");
   const body = await response.json();
@@ -123,12 +157,43 @@ test("analysis endpoint rejects unsupported game filters", async () => {
   assert.equal(response.status, 400);
 });
 
+test("next-flight endpoint refuses to create estimates without persistent prediction storage", async () => {
+  const response = await fetch(baseUrl + "/api/v1/prediction/next?game=aviator&source=gamedata365");
+  const body = await response.json();
+  assert.equal(response.status, 503);
+  assert.equal(body.status, "unavailable");
+  assert.equal(body.reason, "PERSISTENT_STORAGE_REQUIRED");
+});
+
 test("round endpoint returns an empty list before ingestion", async () => {
   const response = await fetch(baseUrl + "/api/v1/rounds?limit=10");
   const body = await response.json();
   assert.equal(response.status, 200);
   assert.deepEqual(body.rounds, []);
   assert.equal(body.count, 0);
+});
+
+test("manual capture rejects requests without its dedicated access token", async () => {
+  const response = await fetch(baseUrl + "/api/v1/manual-capture", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ multiplier: 1.75 })
+  });
+  assert.equal(response.status, 401);
+});
+
+test("manual capture requires persistent storage even with a valid token", async () => {
+  const response = await fetch(baseUrl + "/api/v1/manual-capture", {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+      "X-Manual-Capture-Token": "manual-test-secret"
+    },
+    body: JSON.stringify({ multiplier: 1.75 })
+  });
+  const body = await response.json();
+  assert.equal(response.status, 503);
+  assert.equal(body.reason, "PERSISTENT_STORAGE_REQUIRED");
 });
 
 test("ingestion rejects requests without a bearer token", async () => {
@@ -140,7 +205,7 @@ test("ingestion rejects requests without a bearer token", async () => {
   assert.equal(response.status, 401);
 });
 
-test("ingestion remains disabled when no source is authorized", async () => {
+test("ingestion rejects sources that are not explicitly allowlisted", async () => {
   const response = await fetch(baseUrl + "/api/v1/ingest", {
     method: "POST",
     headers: {
@@ -149,10 +214,27 @@ test("ingestion remains disabled when no source is authorized", async () => {
     },
     body: JSON.stringify({
       source: "betway",
-      rounds: [{ roundId: "fake-test-round", multiplier: 1.65, endedAt: new Date().toISOString() }]
+      rounds: [{ roundId: "blocked-test-round", multiplier: 1.65, endedAt: new Date().toISOString() }]
     })
   });
   assert.equal(response.status, 403);
   const body = await response.json();
   assert.match(body.error, /source is not enabled/i);
+});
+
+test("ingestion accepts authorized records and identifies repeated round IDs", async () => {
+  const record = { roundId: "unique-test-round", game: "aviator", multiplier: 1.65, endedAt: new Date().toISOString() };
+  const send = () => fetch(baseUrl + "/api/v1/ingest", {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+      authorization: "Bearer test-only-secret"
+    },
+    body: JSON.stringify({ source: "gamedata365", rounds: [record] })
+  });
+  const [first, second] = await Promise.all([send(), send()]);
+  const bodies = await Promise.all([first.json(), second.json()]);
+  assert.ok([first.status, second.status].every(status => status === 201));
+  assert.equal(bodies.reduce((sum, body) => sum + body.accepted, 0), 1);
+  assert.equal(bodies.reduce((sum, body) => sum + body.duplicates, 0), 1);
 });

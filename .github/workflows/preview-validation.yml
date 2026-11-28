@@ -1,0 +1,32 @@
+name: Preview branch validation
+
+on:
+  push:
+    branches:
+      - fix/restore-preview-research-core
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  validate-collector:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: collector
+    steps:
+      - name: Check out preview repository
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install dependencies
+        run: npm install
+      - name: Check JavaScript syntax
+        run: npm run check
+      - name: Run collector and analytics tests
+        run: npm test

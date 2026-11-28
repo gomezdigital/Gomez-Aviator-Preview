@@ -1,16 +1,16 @@
 import http from "node:http";
-import fs from "node:fs";
-import path from "node:path";
-import { fileURLToPath } from "node:url";
+import { randomUUID } from "node:crypto";
 import { analyzeRounds } from "./analytics/engine.js";
+import { buildNextFlightEstimate } from "./analytics/next-flight.js";
 import { analyzeIntelligence } from "./analytics/intelligence.js";
+import { analyzePatterns } from "./analytics/patterns.js";
 import { assessDataQuality } from "./analytics/quality.js";
 import { buildAgentReport } from "./analytics/agents.js";
+import { readAllRecords, persistUniqueRecords, persistPrediction, resolvePendingPredictions, checkStorage, storageMode, persistentStorage } from "./storage.js";
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PORT = Number(process.env.PORT || 8080);
-const DATA_FILE = path.resolve(process.env.DATA_FILE || path.join(__dirname, "data", "rounds.jsonl"));
 const INGEST_TOKEN = process.env.INGEST_API_TOKEN || "";
+const MANUAL_CAPTURE_TOKEN = process.env.MANUAL_CAPTURE_TOKEN || "";
 const ALLOWED_SOURCES = new Set(
   (process.env.ALLOWED_SOURCES || "")
     .split(",").map((s) => s.trim().toLowerCase()).filter(Boolean)
@@ -20,8 +20,7 @@ const CORS_ORIGINS = new Set(
 );
 const MAX_BODY_BYTES = 256 * 1024;
 const MAX_RETURNED_ROUNDS = 500;
-const SOURCES = ["betway", "sportybet", "other-authorized-provider", "gamedata365", "user-import"];
-let writeQueue = Promise.resolve();
+const SOURCES = ["betway", "sportybet", "other-authorized-provider", "gamedata365", "user-import", "manual-observation"];
 
 function json(res, status, data, extraHeaders = {}) {
   res.writeHead(status, {
@@ -65,7 +64,7 @@ function applyCors(req, res) {
   if (origin) {
     res.setHeader("access-control-allow-origin", origin);
     res.setHeader("vary", "Origin");
-    res.setHeader("access-control-allow-headers", "Authorization, Content-Type");
+    res.setHeader("access-control-allow-headers", "Authorization, Content-Type, X-Manual-Capture-Token");
     res.setHeader("access-control-allow-methods", "GET, POST, OPTIONS");
   }
   return true;
@@ -113,42 +112,13 @@ function normalizeRound(input, source) {
   return {
     record: {
       source,
-      ...(game ? { game } : {}),
+      game: game || "aviator",
       roundId,
       multiplier,
       endedAt: new Date(time).toISOString(),
       receivedAt: new Date().toISOString()
     }
   };
-}
-
-async function readAllRecords() {
-  try {
-    const content = await fs.promises.readFile(DATA_FILE, "utf8");
-    const rows = [];
-    for (const line of content.split("\n")) {
-      if (!line.trim()) continue;
-      try {
-        const row = JSON.parse(line);
-        if (row && typeof row === "object" && row.source && row.roundId) rows.push(row);
-      } catch {
-        // Ignore a damaged line, but preserve it on disk for investigation.
-      }
-    }
-    return rows;
-  } catch (error) {
-    if (error.code === "ENOENT") return [];
-    throw error;
-  }
-}
-
-async function appendRecords(records) {
-  writeQueue = writeQueue.then(async () => {
-    await fs.promises.mkdir(path.dirname(DATA_FILE), { recursive: true });
-    const lines = records.map((r) => JSON.stringify(r)).join("\n") + "\n";
-    await fs.promises.appendFile(DATA_FILE, lines, { encoding: "utf8", mode: 0o600 });
-  });
-  return writeQueue;
 }
 
 function sourceHealth(records) {
@@ -179,10 +149,23 @@ const server = http.createServer(async (req, res) => {
 
     const url = new URL(req.url || "/", "http://localhost");
 
+    if (req.method === "GET" && url.pathname === "/api/v1/time") {
+      return json(res, 200, {
+        serverTime: new Date().toISOString(),
+        timezone: "Africa/Gaborone",
+        timezoneLabel: "CAT",
+        source: "collector-server"
+      });
+    }
+
     if (req.method === "GET" && url.pathname === "/health") {
+      const storage = await checkStorage();
       return json(res, 200, {
         ok: true,
         service: "Gomez Aviator Intelligence Collector",
+        storageMode,
+        persistentStorage,
+        storage,
         liveProviderConnected: false,
         note: "Service health does not mean an Aviator source is connected."
       });
@@ -232,6 +215,29 @@ const server = http.createServer(async (req, res) => {
       });
     }
 
+
+    if (req.method === "GET" && url.pathname === "/api/v1/patterns") {
+      const game = (url.searchParams.get("game") || "aviator").trim().toLowerCase();
+      const source = (url.searchParams.get("source") || "").trim().toLowerCase();
+      const recentParam = Number(url.searchParams.get("recentSize") || 20);
+      const baselineParam = Number(url.searchParams.get("baselineSize") || 50);
+      const transitionParam = Number(url.searchParams.get("minimumTransitionCount") || 5);
+      if (game && !["aviator", "high-flyer", "jetx"].includes(game)) {
+        return json(res, 400, { error: "game must be aviator, high-flyer, or jetx." });
+      }
+      const records = await readAllRecords();
+      return json(res, 200, {
+        patterns: analyzePatterns(records, {
+          game,
+          source,
+          recentSize: Number.isInteger(recentParam) ? recentParam : 20,
+          baselineSize: Number.isInteger(baselineParam) ? baselineParam : 50,
+          minimumTransitionCount: Number.isInteger(transitionParam) ? transitionParam : 5
+        }),
+        liveFeedVerified: false
+      });
+    }
+
     if (req.method === "GET" && url.pathname === "/api/v1/analysis") {
       const game = (url.searchParams.get("game") || "aviator").trim().toLowerCase();
       const source = (url.searchParams.get("source") || "").trim().toLowerCase();
@@ -244,6 +250,47 @@ const server = http.createServer(async (req, res) => {
       return json(res, 200, {
         analysis: analyzeRounds(records, { game, source, limit }),
         liveFeedVerified: false
+      });
+    }
+
+    if (req.method === "GET" && url.pathname === "/api/v1/prediction/next") {
+      const game = (url.searchParams.get("game") || "aviator").trim().toLowerCase();
+      const source = (url.searchParams.get("source") || "gamedata365").trim().toLowerCase();
+      if (game !== "aviator") return json(res, 400, { error: "Next-flight research currently supports Aviator only." });
+      if (!persistentStorage) return json(res, 503, {
+        status: "unavailable", reason: "PERSISTENT_STORAGE_REQUIRED",
+        message: "The prediction ledger requires persistent Supabase storage."
+      });
+      const records = await readAllRecords();
+      const filtered = records
+        .filter((r) => r.game === game && (!source || r.source === source))
+        .sort((a, b) => Date.parse(a.endedAt) - Date.parse(b.endedAt));
+      const asOfAt = new Date().toISOString();
+      const estimate = buildNextFlightEstimate(filtered, { asOfAt, maxFreshnessSeconds: 120, minSample: 30, maxSample: 200 });
+      if (estimate.status !== "estimate_available") {
+        return json(res, 200, { prediction: estimate, saved: false });
+      }
+      const saved = await persistPrediction({
+        game,
+        source,
+        as_of_at: estimate.asOfAt,
+        display_timezone: "Africa/Gaborone",
+        data_cutoff_round_id: estimate.dataCutoffRoundId,
+        data_cutoff_ended_at: estimate.dataCutoffEndedAt,
+        data_freshness_seconds: estimate.dataFreshnessSeconds,
+        sample_size: estimate.sampleSize,
+        model_version: estimate.modelVersion,
+        prediction: estimate,
+        status: "pending"
+      });
+      const storedEstimate = saved?.prediction && typeof saved.prediction === "object"
+        ? { ...saved.prediction, id: saved.id, asOfAt: saved.as_of_at }
+        : { ...estimate, id: saved?.id || null };
+      return json(res, 200, {
+        prediction: storedEstimate,
+        saved: Boolean(saved),
+        reusedExisting: Boolean(saved?.as_of_at && saved.as_of_at !== estimate.asOfAt),
+        note: "This estimate targets the first subsequent round observed by the connected data source, which may not be the actual next game flight if intervening rounds were missed."
       });
     }
 
@@ -263,6 +310,41 @@ const server = http.createServer(async (req, res) => {
         sourceFilter: source || null,
         gameFilter: game || null,
         liveFeedVerified: false
+      });
+    }
+
+    if (req.method === "POST" && url.pathname === "/api/v1/manual-capture") {
+      if (!timingSafeTokenMatch(req.headers["x-manual-capture-token"], MANUAL_CAPTURE_TOKEN)) {
+        return json(res, 401, { error: "A valid manual-capture access token is required." });
+      }
+      if (!persistentStorage) return json(res, 503, {
+        status: "unavailable",
+        reason: "PERSISTENT_STORAGE_REQUIRED",
+        message: "Manual observations require persistent Supabase storage."
+      });
+      const body = await readBody(req);
+      const normalized = normalizeRound({
+        roundId: "manual-" + randomUUID(),
+        game: "aviator",
+        multiplier: body?.multiplier,
+        endedAt: new Date().toISOString()
+      }, "manual-observation");
+      if (normalized.error) return json(res, 400, { error: normalized.error });
+      const round = normalized.record;
+      const persisted = await persistUniqueRecords("manual-observation", [round]);
+      const resolution = await resolvePendingPredictions(round);
+      return json(res, 201, {
+        source: "manual-observation",
+        accepted: persisted.accepted,
+        duplicates: persisted.duplicates,
+        predictionsResolved: resolution.resolved,
+        round: {
+          roundId: round.roundId,
+          multiplier: round.multiplier,
+          endedAt: round.endedAt,
+          receivedAt: round.receivedAt
+        },
+        note: "This is a manually observed result, not an automatically verified game feed."
       });
     }
 
@@ -289,25 +371,16 @@ const server = http.createServer(async (req, res) => {
       });
       if (errors.length) return json(res, 400, { error: "One or more records failed validation.", details: errors });
 
-      const existing = await readAllRecords();
-      const known = new Set(existing.map((r) => source + "::" + (r.game || "unspecified") + "::" + r.roundId));
-      const batchKnown = new Set();
-      const accepted = [];
-      let duplicates = 0;
-      for (const record of normalized) {
-        const key = source + "::" + (record.game || "unspecified") + "::" + record.roundId;
-        if (known.has(key) || batchKnown.has(key)) {
-          duplicates += 1;
-          continue;
-        }
-        batchKnown.add(key);
-        accepted.push(record);
+      const persisted = await persistUniqueRecords(source, normalized);
+      const resolutionResults = [];
+      for (const round of [...normalized].sort((a, b) => Date.parse(a.endedAt) - Date.parse(b.endedAt))) {
+        resolutionResults.push(await resolvePendingPredictions(round));
       }
-      if (accepted.length) await appendRecords(accepted);
       return json(res, 201, {
         source,
-        accepted: accepted.length,
-        duplicates,
+        accepted: persisted.accepted,
+        duplicates: persisted.duplicates,
+        predictionsResolved: resolutionResults.reduce((sum, item) => sum + item.resolved, 0),
         rejected: 0,
         note: "Accepted records are stored as supplied; ingestion does not verify the source or prove a live feed.",
         liveFeedVerified: false
