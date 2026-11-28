@@ -1,6 +1,9 @@
 name: Gomez Aviator Free Live Capture
 
 on:
+  push:
+    paths:
+      - .github/workflows/gamedata365-free-live-capture.yml
   schedule:
     # GitHub scheduled workflows run on the default branch. The code checkout
     # below deliberately targets the active preview development branch.
